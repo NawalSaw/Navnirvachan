@@ -1,0 +1,87 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+    command: ["npm", "start"] # Example: nodemon or express dev server
+    develop:
+      watch:
+        - action: sync
+          path: ./backend
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./backend/package.json
+    image: voting-app-backend
+    ports:
+      - "5000:5000" # API available on localhost:5000
+    volumes:
+      - ./backend:/app
+      - /app/node_modules # Prevent host's node_modules from conflicting
+    environment:
+      - NODE_ENV=development
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+    depends_on:
+      - ollama
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # Optional preload model on start
+    # command: ["ollama", "serve"]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  agent:
+    build:
+      context: ./Agent
+    # command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    image: voting-app-agent
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./Agent:/app
+    environment:
+      - NODE_ENV=development
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  frontend:
+    build:
+      context: ./frontend
+    command: ["npm", "run", "dev"]  # Example: next dev / vite dev
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./frontend/package.json
+    image: voting-app-frontend
+    ports:
+      - "3000:3000"  # Frontend at localhost:3000
+    depends_on:
+      - backend
+    environment:
+      - NODE_ENV=development
+
+volumes:
+  ollama_data:

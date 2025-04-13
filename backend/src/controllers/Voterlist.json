@@ -1,0 +1,38 @@
+[
+    {
+        "name": "Rohan",
+        "age": 20,
+        "image": "public/nawal.jpg",
+        "address": "sonatand, ritudih, bokaro, jharkhand, india",
+        "phone": "+919110981943",
+        "email": "Z4l0S@example.com",
+        "aadhaar": "1234567890"
+    },
+    {
+        "name": "Rajiv",
+        "age": 25,
+        "image": "public/person.jpeg",
+        "address": "Flat No. 303, Shanti Kunj, Barwa Road, Dhanbad, Jharkhand 826001, India",
+        "phone": "1234767890",
+        "email": "Z4l07@example.com",
+        "aadhaar": "1264567890"
+    },
+    {
+        "name": "Ram",
+        "age": 30,
+        "image": "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=600",
+        "address": "123 Main St, Ayodhya, Uttar Pradesh 224123, India",
+        "phone": "1234567895",
+        "email": "Z4l6S@example.com",
+        "aadhaar": "1634567890"
+    },
+    {
+        "name": "Shyam",
+        "age": 25,
+        "image": "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=600",
+        "address": "Plot No. 45, Vivekananda Road, Kalyani Nagar, Pune, Maharashtra 411006, India",
+        "phone": "1224567890",
+        "email": "Z440S@example.com",
+        "aadhaar": "6234567890"
+    }
+]

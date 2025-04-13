@@ -1,0 +1,17 @@
+.git
+__pycache__/
+*.pyc
+*.pyo
+*.sqlite3
+media/
+logs/
+datasets/
+docker-compose.yaml
+Dockerfile
+.dockerignore
+*.log
+node_modules
+.git
+.dockerignore
+Dockerfile
+npm-debug.log
