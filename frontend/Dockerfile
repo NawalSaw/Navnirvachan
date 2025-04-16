@@ -1,23 +1,32 @@
-########################################## Stage 1: Build dependencies ############################################
-
+########################################
+# Stage 1: Build
+########################################
 FROM node:18-alpine AS build
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package*.json ./
+RUN npm install  # Install all deps including dev
 
-RUN npm install
+COPY . .  # Include source code
 
-############################### Stage 2: Production runtime - clean and minimal #################################
+RUN npm run build  # Build your app (assumes output in /app/dist)
 
+########################################
+# Stage 2: Production Runtime
+########################################
 FROM node:18-alpine AS runtime
 
 WORKDIR /app
 
-COPY --from=build /app/node_modules ./node_modules
+COPY package*.json ./
+RUN npm ci --omit=dev  # Install only prod deps
 
-COPY . .
+COPY --from=build /app/dist ./dist  # Copy built app
 
-EXPOSE 5000 
+# If you need public files or assets
+# COPY --from=build /app/public ./public
 
-CMD ["npm", "run", "dev"]
+EXPOSE 5000
+
+CMD ["node", "dist/index.js"]  # Adjust this to your entry point

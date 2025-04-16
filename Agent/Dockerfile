@@ -18,7 +18,7 @@ RUN pip install --no-cache-dir \
     speechrecognition \
     deep_translator \
     pydub \
-    gtts \
+    gtts \  
     ollama \
     python-dotenv \
     fastapi[standard] \
