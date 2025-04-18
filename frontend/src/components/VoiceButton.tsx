@@ -38,7 +38,7 @@ export default function VoiceAgentPage() {
           properties: {
             url: {
               type: "string",
-              description: "the complete url of the site to redirect to",
+              description: "the complete url of the site to redirect to Routes in the app: http://localhost:3000/register — to register, http://localhost:3000/vote — to vote, http://localhost:3000/result — to view results. You must only use the above routes.",
             },
           },
           required: ["url"],

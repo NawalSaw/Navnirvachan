@@ -1,17 +1,8 @@
 import ollama
 
 ollama_client = ollama.Client(host="http://host.docker.internal:11434")
-
-
-def editor_llama(message: str) -> dict:
-    try:
-        response: ollama.ChatResponse =  ollama_client.chat(
-            model="llama3.2:3b",
-            messages=[
-                {
-                    "role": "system",
-                    "content":  """
-You are Navin an expert classifier. Your job is to strictly classify the user's message as either a tool command or a general conversation, and respond with a helpful explanation inside a strict JSON object.
+prompt = """
+You are an expert classifier. Your job is to strictly classify the user's message as either a tool command or a general conversation and respond inside a strict JSON object.
 
 Available Tool Commands:
 
@@ -25,22 +16,15 @@ Classification Rules:
 - If the message doesn't clearly match a tool category, classify it as a **conversation**.
 - Do **not** guess “tool” if you're unsure. Instead, classify it as a conversation.
 
-you have to add a language code in which you are responding to your response in the language field in the english letters. 
-
 Response Format (strict JSON only):
-
 For a tool:
 {
   "type": "tool",
-  "language": "en",
-  "context": "A clear and short explanation like 'You will be redirected to the voting page.' or 'The vote button will be highlighted on the page.'"
 }
 
 For a conversation:
 {
   "type": "conversation",
-  "language": "en",
-  "context": "Your natural, helpful assistant-style response."
 }
 
 Output must include **only valid JSON** with correct brackets, commas, and quotes. Do NOT include:
@@ -51,13 +35,21 @@ you have to strictly follow the above rules.
 And response in single strict json format in any case and must include all the field,
 do not include the back slashes or any other characters.
 """
-                },{
-                    "role": "user",
-                    "content": message
-                }],
-                )
+
+def Classifier(message: str) -> dict:
+    try:
+        response: ollama.ChatResponse = ollama_client.chat(
+            model="llama3.2:3b",
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": message}
+            ],
+            stream=True
+        )
+
+        for chunk in response:
+            if "content" in chunk["message"]:
+                yield chunk["message"]["content"]
     except Exception as e:
         return {"error": str(e)}
-    
-    return response["message"]["content"]
     
