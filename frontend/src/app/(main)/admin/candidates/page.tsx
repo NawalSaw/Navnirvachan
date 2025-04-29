@@ -9,7 +9,7 @@ import {
 import { useGetCurrentVoter } from "@/hooks/voterApi";
 import { Loader2 } from "lucide-react";
 
-function page() {
+function Page() {
   const {
     data: currentAdmin,
     error,
@@ -64,4 +64,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;

@@ -11,6 +11,7 @@ import {
 import { Button } from "./ui/Button";
 import Sidebar from "./Sidebar";
 import VoiceAgentPage from "./VoiceButton";
+import Agent from "./Voice_agent_realtime/Agent";
 
 const geistSans = localFont({
   src: "../samarkan-font/samkaran.ttf",
@@ -29,7 +30,7 @@ function Navbar() {
         </p>
       </span>
       <span className="flex items-center lg:gap-20 md:gap-16 sm:gap-12">
-        <VoiceAgentPage />
+        <Agent />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button className="bg-transparent text-white border-none text-md sm:text-lg">

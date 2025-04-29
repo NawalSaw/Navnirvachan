@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install  # Install all deps including dev
 
-COPY . .  # Include source code
+COPY . . 
 
 RUN npm run build  # Build your app (assumes output in /app/dist)
 
@@ -22,11 +22,13 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev  # Install only prod deps
 
-COPY --from=build /app/dist ./dist  # Copy built app
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/public ./public
+COPY --from=build /app/.next/static ./.next/static
 
 # If you need public files or assets
 # COPY --from=build /app/public ./public
 
-EXPOSE 5000
+EXPOSE 3000
 
-CMD ["node", "dist/index.js"]  # Adjust this to your entry point
+CMD ["node", "server.js"]  # Adjust this to your entry point

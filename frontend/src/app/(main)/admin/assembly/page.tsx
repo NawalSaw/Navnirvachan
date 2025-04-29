@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useCreateAssembly } from "@/hooks/candidateApi";
 import React from "react";
 
-function page() {
+function Page() {
   const [form, setForm] = React.useState({
     areasUnder: [""],
     name: "",
@@ -52,4 +52,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;

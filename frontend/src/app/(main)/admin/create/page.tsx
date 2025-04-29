@@ -7,7 +7,7 @@ import FileUpload from "@/components/fileUpload";
 import { useAddAdmin } from "@/hooks/voterApi";
 import { toast } from 'react-hot-toast';
 
-function page() {
+function Page() {
   const { addAdminAsync, isPending } = useAddAdmin();
   const [AdminData, setAdminData] = useState({
     name: "",
@@ -85,4 +85,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;

@@ -1,8 +1,8 @@
 import VoteSuccess from "@/components/VoteSuccess";
 import React from "react";
 
-function page() {
+function Page() {
   return <VoteSuccess />;
 }
 
-export default page;
+export default Page;

@@ -94,7 +94,7 @@ import { useDeleteAdmin, useGetAllAdmins } from '@/hooks/voterApi';
 //   },
 // ]
 
-function page() {
+function Page() {
   const { data: admins, isError, error, isPending, isSuccess } = useGetAllAdmins();
   const {deleteAdminAsync} = useDeleteAdmin();
 
@@ -120,4 +120,4 @@ function page() {
   )
 }
 
-export default page
+export default Page

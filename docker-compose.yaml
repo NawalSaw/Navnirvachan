@@ -65,7 +65,7 @@ services:
   frontend:
     build:
       context: ./frontend
-    command: ["npm", "run", "dev"]  # Example: next dev / vite dev
+    command: ["node", "server.js"]  # Example: next dev / vite dev
     develop:
       watch:
         - action: sync

@@ -7,7 +7,7 @@ import { useSetCandidate } from "@/hooks/candidateApi";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
-function page() {
+function Page() {
   const { setCandidateAsync, isPending } = useSetCandidate();
   const [formData, setFormData] = useState({
     image: "",
@@ -96,4 +96,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;

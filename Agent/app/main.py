@@ -3,8 +3,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.Agent_navin import router as agent_router
 from app.routes.Agent_Navin_realtime import router as agent_realtime_router
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
+
+app.mount("/static/audio", StaticFiles(directory="static/audio"), name="static/audio")
 
 # Enable CORS (for local frontend testing or cross-origin communication)
 app.add_middleware(

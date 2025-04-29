@@ -112,7 +112,6 @@ export default function VoiceAgentPage() {
         const audio = new Audio(`http://localhost:5001${msg.audio_url}`);
 
         audio.play();
-
         if (msg.function_name) {
           console.log("Calling function:", msg.function_name);
           const args = msg.arguments || {}; // assuming backend sends this

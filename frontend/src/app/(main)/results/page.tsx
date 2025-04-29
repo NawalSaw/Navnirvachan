@@ -14,7 +14,7 @@ import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 
-function page() {
+function Page() {
   const {
     data: currentVoter,
     error,
@@ -85,6 +85,7 @@ if(isError && !isPending){
               <CircularProgress percentage={electionProgress?.data?.percentage} size={150} strokeWidth={20} />
             </div>
             <div className="bg-gray-600 z-[1] w-[80%] h-[50vh] rounded-xl p-2 pt-20">
+              {/* @ts-ignore */}
               <ResultGraph candidates={totalVoteCount?.data} />
             </div>
           </TabsContent>
@@ -106,4 +107,4 @@ if(isError && !isPending){
   );
 }
 
-export default page;
+export default Page;

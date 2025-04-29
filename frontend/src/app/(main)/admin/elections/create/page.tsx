@@ -6,7 +6,7 @@ import { useCreateElection } from "@/hooks/VoteApi";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
-function page() {
+function Page() {
   const [electionData, setElectionData] = useState({
     name: "",
     location: "",
@@ -51,4 +51,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;

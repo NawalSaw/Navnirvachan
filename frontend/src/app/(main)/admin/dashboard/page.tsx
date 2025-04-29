@@ -10,7 +10,7 @@ import {
 import { useGetAllVoters, useGetCurrentVoter } from "@/hooks/voterApi";
 import { Loader2, Paperclip, Proportions, Users } from "lucide-react";
 
-function page() {
+function Page() {
   const { Events, isLoading: isEventPending } = useGetAllEvents();
 
   const {
@@ -80,4 +80,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;

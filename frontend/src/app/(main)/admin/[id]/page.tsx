@@ -18,10 +18,11 @@ import React from "react";
 //   date: new Date(),
 // };
 
-function page() {
+function Page() {
   const { id } = useParams();
+  const safeId: string = id ? String(id) : "";
   console.log(id)
-  const { data: admin, isLoading, isError, error } = useGetAdmin(id);
+  const { data: admin, isLoading, isError, error } = useGetAdmin(safeId);
   console.log(admin)
 
   if (isLoading) return <div>Loading...</div>;
@@ -73,4 +74,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;

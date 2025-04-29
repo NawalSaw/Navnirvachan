@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react";
 import React from "react";
 
 
-function page() {
+function Page() {
   const { data: admins, isPending } = useGetCurrentVoter();
   const address = admins?.WorkingAddress;
 
@@ -47,4 +47,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;

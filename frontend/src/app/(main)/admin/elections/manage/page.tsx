@@ -15,7 +15,7 @@ import { Loader2 } from 'lucide-react';
  * The `handleToggleElection` function is a placeholder and should be replaced with a function that makes an API call to start or stop an election.
  * The `elections` prop is an array of election objects, each with a `name`, `location`, `isStarted` and `date` property.
  */
-function page() {
+function Page() {
     const {
       data: currentAdmin,
       error,
@@ -103,4 +103,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;
