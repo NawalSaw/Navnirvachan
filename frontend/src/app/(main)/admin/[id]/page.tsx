@@ -1,5 +1,6 @@
 "use client";
 
+import ErrorPage from "@/components/ErrorPage";
 import { Input } from "@/components/ui/input";
 import { useGetAdmin } from "@/hooks/voterApi";
 import { useParams } from "next/navigation";
@@ -26,7 +27,7 @@ function Page() {
   console.log(admin)
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError && !isLoading && !admin) return <div>{error?.message || "Something went wrong"}</div>;
+  if (isError && !isLoading && !admin) return <ErrorPage />;
   return (
     <div className="bg-gray-700 flex flex-col gap-20 items-center justify-center text-white h-[90vh] mt-20 w-full mx-10">
       <h1 className="text-4xl font-bold text-center">Admin Details</h1>

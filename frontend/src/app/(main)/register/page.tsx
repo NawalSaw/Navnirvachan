@@ -87,53 +87,51 @@ function Page() {
   };
 
   return (
-    <div className="text-white gap-6 flex flex-col items-center justify-center pt-24">
-      <h1 className="font-bold text-4xl">Register</h1>
+   <div className="text-white gap-6 flex flex-col items-center justify-center pt-36 md:pt-24 w-full min-h-screen px-4">
+  <h1 className="font-bold text-4xl md:text-5xl">Register</h1>
 
-      {/* Using iframe instead of video for YouTube embedding */}
-      <CameraCapture
-        onCapture={(image) => setFormData({ ...formData, image: image })}
-      />
+  {/* Camera Capture */}
+  <CameraCapture
+    onCapture={(image) => setFormData({ ...formData, image })}
+  />
 
-      <Input
-        className="max-w-[40vw] h-12 text-4xl font-bold border-2 border-orange-400"
-        name="identifier"
-        onChange={(e) => {
-          if (e.target.value.includes("@")) {
-            setEmail(e.target.value);
-            return;
-          } else {
-            setFormData({ ...formData, aadhaarId: e.target.value });
-            return;
-          }
-        }}
-        placeholder="AdhaarID or Email"
-      />
-      <div className="w-[40vw] flex rounded-lg h-12 text-4xl font-bold border-2 border-orange-400">
-        <Input
-          className="border-none w-[80%] h-full focus-visible:ring-0"
-          name="otp"
-          placeholder="One Time Password"
-          onChange={(e) =>
-            setFormData({ ...formData, [e.target.name]: e.target.value })
-          }
-        />
-        <Button
-          onClick={handleOTP}
-          className="w-[20%] h-full active:border-orange-800 transition-all duration-100 hover:bg-orange-400 flex justify-center items-center ml-4 rounded-md text-lg"
-        >
-          Send OTP
-        </Button>
-      </div>
-      {/* <Link href="/vote"> */}
-      <Button
-        onClick={handleRegister}
-        className="bg-orange-400 w-[40vw] border-b-8 h-14 rounded-full active:border-b-0 hover:bg-amber-600 transition-all duration-100 border-b-orange-700 text-xl font-bold"
-      >
-        {isUserPending || isPendingAdmin ? <Loader /> : "Register"}
-      </Button>
-      {/* </Link> */}
-    </div>
+  <Input
+    className="w-full max-w-md md:max-w-xl h-12 text-md md:text-lg font-bold border-2 border-orange-400"
+    name="identifier"
+    onChange={(e) => {
+      if (e.target.value.includes("@")) {
+        setEmail(e.target.value);
+      } else {
+        setFormData({ ...formData, aadhaarId: e.target.value });
+      }
+    }}
+    placeholder="Aadhaar ID or Email"
+  />
+
+  <div className="w-full max-w-md md:max-w-xl flex rounded-lg h-12 font-bold border-2 border-orange-400">
+    <Input
+      className="border-none w-[75%] h-full focus-visible:ring-0 text-md md:text-lg"
+      name="otp"
+      placeholder="One Time Password"
+      onChange={(e) =>
+        setFormData({ ...formData, [e.target.name]: e.target.value })
+      }
+    />
+    <Button
+      onClick={handleOTP}
+      className="w-[25%] h-full transition-all duration-100 flex justify-center items-center rounded-md text-sm md:text-lg"
+    >
+      Send OTP
+    </Button>
+  </div>
+
+  <Button
+    onClick={handleRegister}
+    className="bg-orange-400 w-full max-w-md md:max-w-xl border-b-8 h-14 rounded-full active:border-b-0 hover:bg-amber-600 transition-all duration-100 border-b-orange-700 text-lg md:text-xl font-bold"
+  >
+    {isUserPending || isPendingAdmin ? <Loader /> : "Register"}
+  </Button>
+</div>
   );
 }
 

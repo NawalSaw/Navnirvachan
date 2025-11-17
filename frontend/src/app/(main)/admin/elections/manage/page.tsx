@@ -6,6 +6,7 @@ import { useDeleteElection, useGetElectionByLocationAdmin, useToggleElection } f
 import { useGetCurrentVoter } from "@/hooks/voterApi";
 import React from "react";
 import { Loader2 } from 'lucide-react';
+import ErrorPage from "@/components/ErrorPage";
 
 /**
  * Page to manage elections
@@ -43,9 +44,7 @@ function Page() {
 
   if (!election && !isElectionPending || !currentAdmin && !isPending) {
     return (
-      <div className="text-white text-4xl w-[90vw] h-[100vh] flex items-center justify-center">
-        {isError ? error?.message : "No election found or your are not authorised"}
-      </div>
+      <ErrorPage />
     )
   }
   const handleToggleElection = (electionId: string) => {

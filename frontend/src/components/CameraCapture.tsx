@@ -46,49 +46,66 @@ const CameraCapture = ({
     onCapture(imageDataURL);
   };
   
+
   if (loading) {
-    return (
-      <div className="w-[40vw] h-[50vh] flex items-center justify-center bg-gray-700 rounded-lg font-bold">
-        <p>loading...</p>
-      </div>
-    );
-  }
-  
   return (
-    <div style={{ textAlign: "center" }} className="">
-      {error ? (
-        <div className="w-[40vw] h-[50vh] flex items-center justify-center bg-gray-700 rounded-lg font-bold">
-          <p>{error}</p>
-        </div>
-      ) : (
-        <span className="w-[40vw] h-[50vh]">
-          {!image && !loading && (
-            <>
-              {" "}
-              <video ref={videoRef} className="w-[40vw] h-[50vh]" autoPlay />
-              <br />
-              <button onClick={captureImage}>Capture</button>
-              <br />
-              <canvas
-                ref={canvasRef}
-                className="w-[40vw] h-[50vh]"
-                style={{ display: "none" }}
-                />
-            </>
-          )}
-          {image && (
-            <div>
-              <h3>Captured Image:</h3>
-                <img src={image} alt="Captured" className="w-[40vw] h-[50vh] rounded-xl" />
-                <br />
-                <a href={image} download="captured.png">Download</a>
-                {/* downloadRef?.current?.click(); */}
-            </div>
-          )}
-        </span>
-      )}
+    <div className="w-full max-w-md md:max-w-lg aspect-video m-5 flex items-center justify-center bg-gray-700 rounded-lg font-bold">
+      <p>loading...</p>
     </div>
   );
-};
+}
+
+return (
+  <div className="text-center w-full flex justify-center">
+    {error ? (
+      <div className="w-full max-w-md md:max-w-lg aspect-video my-5 flex items-center justify-center bg-gray-700 rounded-lg font-bold">
+        <p>{error}</p>
+      </div>
+    ) : (
+      <div className="w-full max-w-md md:max-w-lg mx-auto">
+        {!image && !loading && (
+          <>
+            <video
+              ref={videoRef}
+              className="w-full max-w-md md:max-w-lg aspect-video rounded-lg bg-black"
+              autoPlay
+            />
+            <button
+              onClick={captureImage}
+              className="mt-3 px-4 py-2 bg-orange-500 hover:bg-orange-600 transition rounded font-bold"
+            >
+              Capture
+            </button>
+
+            <canvas
+              ref={canvasRef}
+              className="hidden w-full max-w-md md:max-w-lg aspect-video"
+            />
+          </>
+        )}
+
+        {image && (
+          <div className="flex flex-col items-center">
+            <h3 className="font-bold mb-2">Captured Image:</h3>
+            <img
+              src={image}
+              alt="Captured"
+              className="w-full max-w-md md:max-w-lg aspect-video rounded-xl object-cover"
+            />
+            <a
+              href={image}
+              download="captured.png"
+              className="mt-3 px-4 py-2 bg-green-500 hover:bg-green-600 rounded text-white font-bold"
+            >
+              Download
+            </a>
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+);
+
+}
 
 export default CameraCapture;

@@ -1,6 +1,7 @@
 "use client";
 
 import DashboardCard from "@/components/DashboardCard";
+import ErrorPage from "@/components/ErrorPage";
 import Graph from "@/components/Graph";
 import {
   useGetAllEvents,
@@ -41,9 +42,7 @@ function Page() {
 
   if (!currentAdmin && !isPending && isError) {
     return (
-      <div className="text-white text-4xl w-[100vw] h-[100vh] flex items-center justify-center">
-        {error?.message}
-      </div>
+      <ErrorPage />
     );
   }
 

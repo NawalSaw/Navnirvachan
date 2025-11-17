@@ -11,7 +11,7 @@ import {
 import { Button } from "./ui/Button";
 import Sidebar from "./Sidebar";
 import VoiceAgentPage from "./VoiceButton";
-import Agent from "./Voice_agent_realtime/Agent";
+import Link from "next/link";
 
 const geistSans = localFont({
   src: "../samarkan-font/samkaran.ttf",
@@ -19,18 +19,19 @@ const geistSans = localFont({
 });
 function Navbar() {
   return (
-    <div className="flex justify-between px-2 lg:px-16 z-[100] md:px-12 py-4 fixed top-0 w-full bg-black">
+    <div className="flex justify-between px-2 lg:px-16 z-[100] md:px-12 py-4 fixed top-0 w-full bg-transparent">
       <span className="flex items-center lg:gap-20 md:gap-16 sm:gap-12 gap-5">
         {/* <Menu className="text-white" /> */}
         <Sidebar />
+        <Link href="/" >
         <p
           className={`${geistSans.className} text-orange-400 lg:text-4xl sm:text-3xl text-2xl`}
         >
           Navnirvachan
         </p>
+        </Link>
       </span>
       <span className="flex items-center lg:gap-20 md:gap-16 sm:gap-12">
-        <Agent />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button className="bg-transparent text-white border-none text-md sm:text-lg">
@@ -61,7 +62,7 @@ function Navbar() {
             className="relative inline-flex items-center justify-center px-4 lg:px-6 py-2 text-md sm:text-lg  font-bold text-white transition-all duration-200 bg-gray-900 font-pj rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
             role="button"
           >
-            OFF NavIn
+            Navin
           </a>
         </div>
       </span>

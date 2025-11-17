@@ -2,6 +2,7 @@
 
 import { CandidateList } from "@/components/CandidateList";
 import CircularProgress from "@/components/CircularProgress";
+import ErrorPage from "@/components/ErrorPage";
 import ResultGraph from "@/components/ResultGraph";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -35,7 +36,7 @@ function Page() {
 if(isError && !isPending){
     toast.error(error?.message || "failed to fetch the User")
     return (
-      <h1>{error?.message || "failed to fetch the User"}</h1>
+        <ErrorPage />
     )
 }
   

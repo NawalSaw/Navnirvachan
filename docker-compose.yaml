@@ -46,22 +46,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  agent:
-    build:
-      context: ./Agent
-    # command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-    image: voting-app-agent
-    ports:
-      - "5001:5001"
-    volumes:
-      - ./Agent:/app
-    environment:
-      - NODE_ENV=development
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
   frontend:
     build:
       context: ./frontend

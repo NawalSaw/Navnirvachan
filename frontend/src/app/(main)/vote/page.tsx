@@ -1,6 +1,7 @@
 "use client";
 
 import { CandidateList } from "@/components/CandidateList";
+import ErrorPage from "@/components/ErrorPage";
 import { useGetAllCandidatesByLocation } from "@/hooks/candidateApi";
 import { useCastVote, useGetElectionByLocation } from "@/hooks/VoteApi";
 import { useGetCurrentVoter } from "@/hooks/voterApi";
@@ -44,11 +45,7 @@ const Page = () => {
 
   if (!currentVoter && !voterLoading) {
     return (
-      <div className="text-white text-4xl w-[100vw] h-[100vh] flex items-center justify-center">
-        <h1 className="mt-52">
-          {isError ? error?.message : "Voter not found"}
-        </h1>
-      </div>
+        <ErrorPage />
     );
   }
 

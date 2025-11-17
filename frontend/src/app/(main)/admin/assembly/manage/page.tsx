@@ -3,6 +3,7 @@
 
 
 import AssemblyTable from "@/components/AssemblyTable";
+import ErrorPage from "@/components/ErrorPage";
 import { useDeleteAssembly, useGetAllAssembliesByState } from "@/hooks/candidateApi";
 import { useGetCurrentVoter } from "@/hooks/voterApi";
 import { Loader2 } from "lucide-react";
@@ -27,9 +28,7 @@ function Page() {
 
   if (!admins || !assemblies) {
     return (
-      <div className="text-white text-4xl w-[90vw] h-[100vh] flex items-center justify-center">
-        No Admins
-      </div>
+      <ErrorPage />
     );
   }
 

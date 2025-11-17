@@ -1,5 +1,6 @@
 "use client"
 
+import ErrorPage from "@/components/ErrorPage";
 import EventGraph from "@/components/EventGraph";
 import EventTable from "@/components/EventTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,9 +21,7 @@ function Page() {
 
   if (isError) {
     return (
-      <div className="text-white text-4xl w-[90vw] h-[100vh] flex items-center justify-center">
-        {error?.message}
-      </div>
+      <ErrorPage />
     );
   }
 

@@ -8,6 +8,7 @@ import {
 } from "@/hooks/candidateApi";
 import { useGetCurrentVoter } from "@/hooks/voterApi";
 import { Loader2 } from "lucide-react";
+import ErrorPage from "@/components/ErrorPage";
 
 function Page() {
   const {
@@ -39,9 +40,7 @@ function Page() {
     (!candidates && !isVoterPending || !candidates.data)
   ) {
     return (
-      <div className="text-white text-4xl w-[90vw] h-[100vh] flex items-center justify-center">
-        Error: {error?.message? error.message : "No candidate found"}
-      </div>
+      <ErrorPage/>
     );
   }
 
