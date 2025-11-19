@@ -15,9 +15,9 @@ import OTP from "../models/otp.model.js";
 import fs from "fs";
 import { uploadToCloudinary } from "../utils/CloudinaryUpload.js";
 import { sendOTP } from '../utils/SendSMS.js';
-import VoterList from "../Voterlist.json" with {type: "json"}
 import Assembly from './../models/assembly.model.js';
 import { fileURLToPath } from "url";
+import VoterList from './../models/VoterList.model.js';
 
 export const registerVoter = ApiHandler(async function (req, res) {
   const file = req.file.path;
@@ -38,17 +38,21 @@ export const registerVoter = ApiHandler(async function (req, res) {
 
 
   // TODO: Check if aadhaarId is valid if government permission granted in place of it
-  const voterInVoterList = VoterList.find((voter) => voter.aadhaar === aadhaarId);
+  const voterInVoterList = await VoterList.findOne({ "voters.aadhaar": aadhaarId });
 
   if (!voterInVoterList) {
   throw new ApiError(400, "You are not in the voterlist");
   }
 
-  console.log(voterInVoterList);
+  if (voterInVoterList.age < 18) {
+    throw new ApiError(400, "You are not eligible to vote");
+  }
+
   const isOtpValid = await OTP.findOne({ otp, phone: voterInVoterList.phone });
   if (!isOtpValid) {
     throw new ApiError(400, "Invalid OTP");
   }
+
 
   try {
     // Photo verification
@@ -65,7 +69,7 @@ export const registerVoter = ApiHandler(async function (req, res) {
     if (!imageUrl) {
       throw new ApiError(500, "Image upload failed");
     }
-
+    
     const voter = await Voter.create({
       name: voterInVoterList.name,
       image: imageUrl,
@@ -289,67 +293,6 @@ export const getOTP = ApiHandler(async function (req, res) {
   res.json(new ApiResponse(200, "OTP sent successfully"));
 });
 
-// export const GetCandidateWorks = ApiHandler(async (req, res) => {
-//   const results = await googleSearch("works done by narendra modi")
-
-//   let paragraphsArray = [];
-
-//   for (const result of results) {
-//     const paragraphs = await scrapeUrl(result.link)
-//     paragraphs.length > 0 && paragraphsArray.push(paragraphs)
-//     console.log(result.link, paragraphs)
-//   }
-
-//   console.log(paragraphsArray)
-//   res.json(paragraphsArray)
-// })
-
-// optimized way
-// export const GetCandidateWorks = ApiHandler(async (req, res) => {
-//   const { candidateName } = req.body;
-
-//   if (!candidateName) {
-//     throw new ApiError(400, "Candidate name is required");
-//   }
-
-//   const results = await googleSearch(
-//     `works done by ${candidateName} in bullet points`
-//   );
-
-//   const scrapePromises = results.map(async (result) => {
-//     const paragraphs = await scrapeUrl(result.link);
-//     return paragraphs.length > 0 && paragraphs;
-//   });
-
-//   const paragraphsArray = await Promise.all(scrapePromises);
-//   const filteredResults = paragraphsArray
-//     .filter((p) => p && p.length > 0)
-//     .flat();
-
-//   res.setHeader("Content-Type", "text/event-stream");
-//   res.setHeader("Cache-Control", "no-cache");
-//   res.setHeader("Connection", "keep-alive");
-//   res.flushHeaders(); // Ensure headers are sent immediately
-
-//   try {
-//     const stream =
-//       await llama(`list the works and development schemes in bullet points from:
-
-//     ${filteredResults}`);
-
-//     for await (const chunk of stream) {
-//       res.write(`data: ${JSON.stringify(chunk.message.content)}\n\n`);
-//       console.log(chunk.message.content);
-//     }
-// res.write("event: end\ndata: [DONE]\n\n");
-//     res.end();
-//   } catch (error) {
-//     console.error("Streaming Error:", error);
-//     res.write(`event: error\ndata: ${JSON.stringify(error)}\n\n`);
-//     res.end();
-//   }
-// });
-
 export const GetCandidateWorks = ApiHandler(async (req, res) => {
   const { location, candidateName } = req.body;
 
@@ -435,18 +378,6 @@ Focus only on the works, ignore unrelated content.
 });
 
 export const addVotersInVoterlist = ApiHandler(async (req, res) => {
-  console.log(req.file);
-
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const VOTERLIST_FILE = path.join(__dirname, "Voterlist.json");
-
-  // Ensure voterlist.json exists
-  if (!fs.existsSync(VOTERLIST_FILE)) {
-    fs.writeFileSync(VOTERLIST_FILE, "[]", "utf-8");
-  }
-
-  console.log(req.file);
-  
   if (!req.file) {
     return res.status(400).json({ message: "No file uploaded" });
   }
@@ -463,6 +394,12 @@ export const addVotersInVoterlist = ApiHandler(async (req, res) => {
     return res.status(400).json({ message: "Uploaded JSON should be an array" });
   }
 
+  if (data.length === 0) {
+    return res.status(400).json({ message: "No data found in the uploaded JSON" });
+  }
+  if (!data.election) {
+    return res.status(400).json({ message: "Election field is required in the voter object" });
+  }
   // Validate each voter object
   for (const [index, voter] of data.entries()) {
     if (
@@ -481,27 +418,23 @@ export const addVotersInVoterlist = ApiHandler(async (req, res) => {
       });
     }
   }
+ const aadhaarList = data.voters.map(v => v.aadhaar);
 
-  // Read existing voter list
-  let voterlist = [];
-  try {
-    voterlist = JSON.parse(fs.readFileSync(VOTERLIST_FILE, "utf-8"));
-    if (!Array.isArray(voterlist)) throw new Error();
-  } catch {
-    return res.status(500).json({ message: "voterlist.json is corrupted" });
+const existingVoters = await VoterList.findOne({
+  "voters.aadhaar": { $in: aadhaarList }
+});
+  
+  if (existingVoters) {
+    return res.status(400).json({
+      message: "Duplicate Aadhaar numbers found in the uploaded JSON",
+      voters: existingVoters.voters.filter(voter => data.voters.some(v => v.aadhaar === voter.aadhaar))
+    });
   }
+  
+  // Save the data to the database
+  const savedData = await VoterList.insertMany(data);
+  res.json(new ApiResponse(200, savedData, "Voters added successfully"));
 
-  // Append validated data
-  voterlist.push(...data);
-  fs.writeFileSync(VOTERLIST_FILE, JSON.stringify(voterlist, null, 4), "utf-8");
-
-  // Remove uploaded file after processing
-  fs.unlinkSync(req.file.path);
-
-  res.json({
-    message: "Voters added successfully",
-    total_voters: voterlist.length,
-  });
 });
 
 export const getVotersByElection = ApiHandler(async (req, res) => {

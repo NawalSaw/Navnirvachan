@@ -1,16 +1,19 @@
-import { Ollama } from "ollama";
+import Groq from "groq-sdk";
+import dotenv from "dotenv";
 
-const ollama = new Ollama({
-  host: `http://localhost:${process.env.OLLAMA_PORT || 11434}`,
-});
+dotenv.config();
 
-export async function llama(message) {
-  console.log("llama initialized");
-  const response = await ollama.chat({
-    model: "llama3.2:1b",
-    messages: [{ role: "user", content: message }],
-    stream: true,
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+export async function llama(prompt) {
+  return groq.chat.completions.create({
+    messages: [
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+    model: "llama-3.1-8b-instant",
+    temperature: 0.7,
   });
-  //   console.log(response);
-  return response;
 }

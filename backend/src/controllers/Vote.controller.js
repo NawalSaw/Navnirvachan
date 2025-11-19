@@ -8,7 +8,7 @@ import Vote from "./../models/vote.model.js";
 import Assembly from "./../models/assembly.model.js";
 import { EventLogger } from "../utils/EventLogger.js";
 import Event from "../models/Event.model.js";
-import VoterList from "../Voterlist.json" with {type: "json"}
+import VoterList from "./../models/VoterList.model.js";
 
 export const castVote = ApiHandler(async (req, res) => {
   const { voterID, candidateID } = req.body;
@@ -210,11 +210,16 @@ export const GetElectionByLocation = ApiHandler(async (req, res) => {
 
 export const getElectionProgress = ApiHandler(async (req, res) => {
   const { electionID } = req.params;
-  const votesCount = (await Vote.find({ electionID })).length;
-  const allVotersInVoterList = VoterList.length;
 
-  if (!votesCount || !allVotersInVoterList) {
-    throw new ApiError(404, "Votes not found");
+  if (!electionID) {
+    throw new ApiError(400, "Election ID is required");
+  }
+
+  const votesCount = (await Vote.find({ electionID })).length;
+  const allVotersInVoterList = (await VoterList.find({ election: electionID })).length;
+
+  if (!allVotersInVoterList) {
+    throw new ApiError(404, "VoterList not found");
   }
 
   const percentage = (votesCount / allVotersInVoterList) * 100; // Calculate the percentage
