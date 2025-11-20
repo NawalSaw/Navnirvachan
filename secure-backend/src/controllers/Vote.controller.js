@@ -11,39 +11,65 @@ import { ApiResponse } from "../utils/system/ApiResponse.js";
 import { ApiHandler } from "../utils/system/ApiHandler.js";
 import Ballot from "./../models/ballotDB/ballot.model.js";
 import Constituency from "./../models/ballotDB/constituency.model.js";
+import { TokenMap } from "./../models/ballotDB/token.model.js";
+import crypto from "crypto";
+import { Bulletin } from "./../models/ballotDB/bulletin.model.js";
+
+function hashBallot(ballot) {
+  const data =
+    ballot.cipher +
+    ballot.iv +
+    ballot.voterAnonId +
+    ballot.constituency.toString();
+
+  return crypto.createHash("sha256").update(data).digest("hex");
+}
 
 export const castVote = ApiHandler(async (req, res) => {
-  const { constituency, vote, voterId } = req.body;
+  const { constituency, vote, tokenId } = req.body;
 
-  if (!constituency || !vote || !voterId) {
-    throw new ApiError(400, "constituency, vote, and voterId are required");
+  if (!constituency || !vote || !tokenId) {
+    throw new ApiError(400, "constituency, vote, and tokenId are required");
   }
+  // 1️⃣ Validate token
+  const tokenEntry = await TokenMap.findOne({ tokenId });
+
+  if (!tokenEntry) {
+    throw new ApiError(400, "Invalid token");
+  }
+
+  if (tokenEntry.used) {
+    throw new ApiError(400, "This token has already been used");
+  }
+
+  if (tokenEntry.expiresAt < new Date()) {
+    throw new ApiError(400, "Token has expired");
+  }
+
+  // 2️⃣ Mark token as used (so user cannot vote twice)
+  tokenEntry.used = true;
+  tokenEntry.usedAt = new Date();
+  await tokenEntry.save();
+
+  // 3️⃣ Get the anonymous voter ID
+  const voterAnonId = tokenEntry.voterAnonId;
 
   // Encrypt vote
   const { cipher, iv } = encryptVote(vote);
 
-  // Generate anonymous voter ID
-  const voterAnonId = generateAnonId(voterId);
-
   // Ephemeral public key placeholder (can be generated per voter if needed)
   const epk = { kty: "EC", crv: "P-256", x: "placeholder", y: "placeholder" };
 
-  const constituencyID = await Constituency.findOne({ name: constituency });
-  const election = await Election.findOne({ $in: {constituencies: constituencyID._id } });
-  if (!election) {
-    throw new ApiError(404, "Election not found");
-  }
-  if (!constituencyID) {
+  const constituencyInDatabase = await Constituency.findOne({
+    name: constituency,
+  });
+  if (!constituencyInDatabase) {
     throw new ApiError(404, "Constituency not found");
-  }
-
-  if (election.status !== "ongoing" || election.endDate < new Date()|| election.startDate > new Date()) {
-    throw new ApiError(400, "Election is not ongoing or has ended");
   }
 
   // Save ballot
   const ballot = new Ballot({
-    constituency: constituencyID._id, // Store constituency ID
+    constituency: constituencyInDatabase._id, // Store constituency ID
     epk,
     cipher,
     iv,
@@ -53,7 +79,22 @@ export const castVote = ApiHandler(async (req, res) => {
 
   await ballot.save();
 
-  res.json(new ApiResponse(201, ballot, "Vote cast successfully"));
+  // Create ballot hash
+  const ballotHash = hashBallot(ballot);
+
+  // Publish on bulletin board
+  await Bulletin.create({
+    ballotHash,
+    publishedAt: new Date(),
+  });
+
+  res.json(
+    new ApiResponse(
+      201,
+      { ballotId: ballot._id, ballotHash },
+      "Vote cast successfully and published on bulletin board"
+    )
+  );
 });
 
 export const TotalVoteCount = ApiHandler(async (req, res) => {
@@ -67,7 +108,10 @@ export const TotalVoteCount = ApiHandler(async (req, res) => {
   if (!constituency || constituency.constituencies.length === 0) {
     throw new ApiError(404, "Constituency not found");
   }
-  if (constituency.status !== "completed" || constituency.endDate < new Date()) {
+  if (
+    constituency.status !== "completed" ||
+    constituency.endDate < new Date()
+  ) {
     throw new ApiError(400, "Election not completed");
   }
 
@@ -288,7 +332,8 @@ export const getElectionProgress = ApiHandler(async (req, res) => {
 
   const voters = await Voter.find({ electionID });
   const votesCount = voters.length;
-  const allVotersInVoterList = (await VoterList.find({ election: electionID })).voters.length;
+  const allVotersInVoterList = (await VoterList.find({ election: electionID }))
+    .voters.length;
   const percentage = (votesCount / allVotersInVoterList) * 100;
   res.json(
     new ApiResponse(
@@ -326,4 +371,74 @@ export const getElectionByConstituencyAdmin = ApiHandler(async (req, res) => {
   }
 
   res.json(new ApiResponse(200, election, "Election found successfully"));
+});
+
+export const issueToken = async (req, res) => {
+  const { voterId, electionId } = req.body;
+
+  if (!voterId || !electionId) {
+    throw new ApiError(400, "voterId and electionId are required");
+  }
+
+  // 2️⃣ Ensure voter exists (optional depending on your system)
+  const voter = await Voter.findOne({ voterId });
+  if (!voter) {
+    throw new ApiError(404, "Voter not found");
+  }
+
+  const election = await Election.findOne({ electionId });
+  if (!election) {
+    throw new ApiError(404, "Election not found");
+  }
+
+  if (!election.constituencies.includes(voter.constituency.toString())) {
+    throw new ApiError(403, "Voter does not belong to this constituency");
+  }
+
+  // 3️⃣ Generate hashed anonymous ID FIRST
+  const voterAnonId = generateAnonId(voterId);
+
+  // 4️⃣ Check if hashed anon ID already has a token for this election
+  const existingToken = await TokenMap.findOne({
+    electionId,
+    voterAnonId,
+  });
+
+  if (existingToken) {
+    throw new ApiError(
+      400,
+      "Token already issued for this voter in this election"
+    );
+  }
+
+  // 5️⃣ Generate a new token
+  const tokenId = crypto.randomUUID();
+
+  // 6️⃣ Expiration time (optional)
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+  // 7️⃣ Save token entry
+  await TokenMap.create({
+    tokenId,
+    electionId,
+    voterAnonId,
+    issuedAt: new Date(),
+    expiresAt,
+  });
+
+  return res.json(
+    new ApiResponse(
+      201,
+      { token: tokenId, expiresAt },
+      "Token issued successfully"
+    )
+  );
+};
+
+export const getAllBulletins = ApiHandler(async (req, res) => {
+  const bulletin = await Bulletin.find({});
+  if (!bulletin) {
+    throw new ApiError(404, "Ballots not found");
+  }
+  res.json(new ApiResponse(200, bulletin, "Ballots found successfully"));
 });

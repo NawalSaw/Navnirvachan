@@ -3,7 +3,8 @@ import { ballotsDB } from "../../db/connectDB.js";
 
 const tokenMapSchema = new mongoose.Schema({
   tokenId: { type: String, unique: true },
-  voterAnonId: String,
+  electionId: { type: mongoose.Schema.Types.ObjectId, ref: "Election", required: true },
+  voterAnonId: { type: String, unique: true },
   used: { type: Boolean, default: false },
   issuedAt: Date,
   usedAt: Date,

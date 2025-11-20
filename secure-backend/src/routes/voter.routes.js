@@ -23,7 +23,7 @@ const router = express.Router();
 
 router.route("/current").get(JWTCheck, getCurrentVoter); //
 router
-  .route("/get-all-voters/:election")
+  .route("/get-all-voters/:electionID")
   .get(JWTCheck, isVerifiedAdmin, checkElectionActive, getVotersByElection);
 router.route("/admin/:id").get(JWTCheck, isVerifiedAdmin, getByIdAdmin); //
 router.route("/get-all-admins/:constituency").get(getAllAdmins);

@@ -496,8 +496,8 @@ export const addVotersInVoterlist = ApiHandler(async (req, res) => {
   res.json(new ApiResponse(200, savedData, "Voters added successfully"));
 });
 export const getVotersByElection = ApiHandler(async (req, res) => {
-  const { election } = req.params;
-  const voters = await VoterList.findOne({ election });
+  const { electionID } = req.params;
+  const voters = await VoterList.findOne({ election: electionID });
   if (!voters) {
     throw new ApiError(404, "Voters not found");
   }

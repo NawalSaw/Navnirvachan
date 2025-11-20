@@ -1,11 +1,11 @@
 import Election from "../models/ballotDB/Election.model.js";
 
 export const checkElectionActive = async (req, res, next) => {
-  const { electionID } = req.params;
+  const { electionID } = req.params || req.body;
 
   const election = await Election.findById(electionID);
   if (!election) return res.status(404).json({ msg: "Election not found" });
-
+  
   const now = new Date();
 
   if (now < election.startDate)

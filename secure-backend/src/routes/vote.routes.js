@@ -4,10 +4,12 @@ import {
   castVote,
   createElection,
   deleteElection,
+  getAllBulletins,
   getAllEvents,
   getElectionByConstituency,
   getElectionByConstituencyAdmin,
   getElectionProgress,
+  issueToken,
   TotalVoteCount,
 } from "../controllers/Vote.controller.js";
 import { isVerifiedAdmin } from "./../middlewares/admin.middleware.js";
@@ -17,6 +19,7 @@ import { checkElectionActive } from "../middlewares/election.middleware.js";
 const router = express.Router();
 
 router.route("/get-election/:constituency").get(getElectionByConstituency); //
+router.route("/get-all-bulletins").get(getAllBulletins); //
 router
   .route("/get-election-admin/:constituency")
   .get(JWTCheck, isVerifiedAdmin, getElectionByConstituencyAdmin); //
@@ -26,7 +29,8 @@ router
   .route("/get-election-progress/:electionID")
   .get(JWTCheck, isVerifiedAdmin, checkElectionActive, getElectionProgress);
 
-router.route("/").post(JWTCheck, checkElectionActive, castVote); //
+router.route("/issue-token/:electionID").post(JWTCheck, checkElectionActive, issueToken);
+router.route("/:electionID").post(JWTCheck, checkElectionActive, castVote); //
 router
   .route("/create-election")
   .post(
