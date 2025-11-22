@@ -9,8 +9,6 @@ import {
   DropdownMenuTrigger,
 } from "./ui/Dropdown";
 import { Button } from "./ui/Button";
-import Sidebar from "./Sidebar";
-import VoiceAgentPage from "./VoiceButton";
 import Link from "next/link";
 
 const geistSans = localFont({
@@ -21,8 +19,7 @@ function Navbar() {
   return (
     <div className="flex justify-between px-2 lg:px-16 z-[100] md:px-12 py-4 fixed top-0 w-full bg-transparent">
       <span className="flex items-center lg:gap-20 md:gap-16 sm:gap-12 gap-5">
-        {/* <Menu className="text-white" /> */}
-        <Sidebar />
+        {/* <Menu className="text-white" /> */} 
         <Link href="/" >
         <p
           className={`${geistSans.className} text-orange-400 lg:text-4xl sm:text-3xl text-2xl`}

@@ -17,7 +17,7 @@ import toast from "react-hot-toast";
 function Page() {
   const [formData, setFormData] = useState({
     otp: "",
-    aadhaarId: "",
+    voterId: "",
     image: "",
   });
   const [email, setEmail] = useState("");
@@ -31,19 +31,19 @@ function Page() {
   const router = useRouter();
 
   const handleOTP = async () => {
-    if (!email && !formData.aadhaarId) {
-      toast.error("Please enter Aadhaar ID or email");
+    if (!email && !formData.voterId) {
+      toast.error("Please enter Voter ID or email");
       return;
     }
     if (email) {
       getAdminOTP(email);
     } else {
-      getOtp(formData.aadhaarId);
+      getOtp(formData.voterId);
     }
   };
 
   const handleRegister = async () => {
-    if (!formData.otp || !(formData.aadhaarId || email)) {
+    if (!formData.otp || !(formData.voterId || email)) {
       toast.error("Please fill OTP and other fields");
       return;
     }
@@ -61,16 +61,18 @@ function Page() {
       form.append("email", email);
       form.append("otp", formData.otp);
 
-      const response = await verifyAdminAsync(form);
-      router.push("/admin/dashboard");
-      console.log(response);
+      const response = await verifyAdminAsync(form, {
+        onSuccess: () => {
+          router.push("/admin/dashboard");
+        },
+      });
     } else {
-      form.append("aadhaarId", formData.aadhaarId);
+      form.append("voterId", formData.voterId);
       form.append("otp", formData.otp);
 
-      const response = await registerVoter(form);
-      console.log(response);
-      router.push("/vote");
+      const response = await registerVoter(form, {
+        onSuccess: () => router.push("/elections"),
+      });
     }
   };
 
@@ -102,10 +104,10 @@ function Page() {
       if (e.target.value.includes("@")) {
         setEmail(e.target.value);
       } else {
-        setFormData({ ...formData, aadhaarId: e.target.value });
+        setFormData({ ...formData, voterId: e.target.value });
       }
     }}
-    placeholder="Aadhaar ID or Email"
+    placeholder="Voter ID or Email"
   />
 
   <div className="w-full max-w-md md:max-w-xl flex rounded-lg h-12 font-bold border-2 border-orange-400">

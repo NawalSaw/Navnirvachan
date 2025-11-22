@@ -15,12 +15,11 @@ export function AuthGuard({
   const router = useRouter();
 
   const { data, isError, isPending, error } = useGetCurrentVoter();
-
   useEffect(() => {
     if (!isPending) {
       if (error || isError) {
         router.replace("/register");
-      } else if (data?.role !== allowedRole) {
+      } else if (data?.data?.role !== allowedRole) {
         toast.error("You are not authorized to access this page.");
         router.replace("/vote");
       }

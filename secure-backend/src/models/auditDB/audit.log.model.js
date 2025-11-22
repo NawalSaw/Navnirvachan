@@ -13,4 +13,11 @@ const auditLogSchema = new mongoose.Schema({
 
 // no updates allowed — enforced by permissions, not schema
 
-export const AuditLog = auditDB.model("AuditLog", auditLogSchema);
+let AuditLog;
+export function getAuditLogModel() {
+  if (!AuditLog) {
+    AuditLog = auditDB.model("AuditLog", auditLogSchema);
+  }
+  return AuditLog;
+}
+  

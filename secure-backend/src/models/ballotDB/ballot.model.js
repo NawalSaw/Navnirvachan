@@ -12,6 +12,10 @@ const ballotSchema = new mongoose.Schema({
 
 
 ballotSchema.index({ constituency: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 }); // Expires after 30 days
-const Ballot = ballotsDB.model("Ballot", ballotSchema);
-
-export default Ballot;
+let Ballot;
+export function getBallotModel() {
+  if (!Ballot) {
+    Ballot = ballotsDB.model("Ballot", ballotSchema);
+  }
+  return Ballot;
+}

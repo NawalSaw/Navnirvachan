@@ -2,8 +2,8 @@
 
 import { CandidateList } from "@/components/CandidateList";
 import ErrorPage from "@/components/ErrorPage";
-import { useGetAllCandidatesByLocation } from "@/hooks/candidateApi";
-import { useCastVote, useGetElectionByLocation } from "@/hooks/VoteApi";
+import { useGetAllCandidatesByConstituency } from "@/hooks/candidateApi";
+import { useCastVote, useGetElectionByConstituency } from "@/hooks/VoteApi";
 import { useGetCurrentVoter } from "@/hooks/voterApi";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -18,19 +18,21 @@ const Page = () => {
   } = useGetCurrentVoter();
 
   // Get the location from the voter
-  const address = currentVoter?.permanentAddress.split(",").at(-3)?.trim();
+  const address = currentVoter?.data.constituency;
 
   // 🔥 Use hook correctly — at the top level
-  const { election, isPending: electionIsLoading } = useGetElectionByLocation(
+  const { election, isPending: electionIsLoading } = useGetElectionByConstituency(
     address || ""
   );
   const { candidates, isPending: candidatesIsLoading } =
-    useGetAllCandidatesByLocation(address || "");
-  const { castVoteAsync } = useCastVote();
+    useGetAllCandidatesByConstituency(address || "");
+  
+  const { castVoteAsync } = useCastVote(election?.data._id || "");
   const router = useRouter();
+
   const handleVote = (candidateID: string) => {
     if (currentVoter) {
-      castVoteAsync({ voterID: currentVoter._id, candidateID });
+      castVoteAsync({ voterID: currentVoter.data._id, candidateID });
       router.push("/success");
     }
   };

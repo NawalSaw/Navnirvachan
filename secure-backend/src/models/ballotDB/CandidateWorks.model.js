@@ -18,6 +18,11 @@ const candidateWorksSchema = new mongoose.Schema({
 });
 
 candidateWorksSchema.index({ date: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 * 12 }); // Expires after 30 days
-const CandidateWorks = mongoose.model("CandidateWorks", candidateWorksSchema);
+let CandidateWorks;
 
-export default CandidateWorks;
+export function getCandidateWorksModel() {
+  if (!CandidateWorks) {
+    CandidateWorks = mongoose.model("CandidateWorks", candidateWorksSchema);
+  }
+  return CandidateWorks;
+}

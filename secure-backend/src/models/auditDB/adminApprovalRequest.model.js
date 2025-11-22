@@ -34,13 +34,20 @@ const adminApprovalRequestSchema = new mongoose.Schema({
   },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
-});
+}, { timestamps: true });
 
 adminApprovalRequestSchema.index(
   { createdAt: 1 },
   { expires: 60 * 60 * 1000 * 24 }
 ); // expires in 1 hour
-export const AdminApprovalRequest = auditDB.model(
-  "AdminApprovalRequest",
-  adminApprovalRequestSchema
-);
+
+let AdminApprovalRequest;
+export function getAdminApprovalRequestModel() {
+  if (!AdminApprovalRequest) {
+    AdminApprovalRequest = auditDB.model(
+      "AdminApprovalRequest",
+      adminApprovalRequestSchema
+    );
+  }
+  return AdminApprovalRequest;
+}

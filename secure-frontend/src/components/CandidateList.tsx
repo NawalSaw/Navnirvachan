@@ -18,22 +18,19 @@ interface CandidateListProps {
   _id: string;
   name: string;
   party: string;
-  description: string;
   image: string;
-  location: string;
-  votes?: number;
+  constituency: string;
+  candidateCode: string; // optional short code
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export function CandidateList({
   candidates,
-  vote = true,
-  showVotes = false,
   deleteButton = true,
   handleClick,
 }: {
   candidates: CandidateListProps[];
-  vote?: boolean;
-  showVotes?: boolean;
   deleteButton?: boolean;
   handleClick?: (candidateID: string) => void;
 }) {
@@ -74,32 +71,30 @@ export function CandidateList({
               </TableCell>
               <TableCell className="font-medium">{candidate.name}</TableCell>
               <TableCell>{candidate.party}</TableCell>
-              <TableCell>{candidate.location}</TableCell>
+              <TableCell>{candidate.constituency}</TableCell>
               <TableCell className="text-right flex items-center justify-end">
-                {vote && (
-                  <ConfirmDialog
-                    handleClick={() => handleClick?.(candidate._id)}
-                    // link="/success"
-                    trigger={
-                      <Button className="bg-orange-400 w-[100px] border-b-4 mt-2 rounded-full active:border-b-0 hover:bg-amber-600 transition-all duration-200 border-b-orange-700 text-md font-bold">
-                        Vote
-                      </Button>
-                    }
-                  />
-                )}
-                {!vote && (
+                {deleteButton ? (
                   <Delete
-                    onClick={() => handleClick?.(candidate._id)}
+                    onClick={() => {
+                      <ConfirmDialog
+                        trigger={<Delete />}
+                        handleClick={() => handleClick?.(candidate._id)}
+                        className={`text-red-400 hover:text-red-600 ${
+                          deleteButton ? "block" : "hidden"
+                        }`}
+                      />;
+                    }}
                     className={`text-red-400 hover:text-red-600 ${
                       deleteButton ? "block" : "hidden"
                     }`}
                     size={20}
                   />
-                )}
-                {showVotes && (
-                  <div className="h-full flex items-center">
-                    {candidate?.votes}
-                  </div>
+                ) : (
+                  <ConfirmDialog
+                    trigger={<div className=" px-4 py-2 rounded-md text-white bg-amber-600 hover:bg-amber-700" >Vote</div>}
+                    handleClick={() => handleClick?.(candidate._id)}
+                    className={`text-red-400 hover:text-red-600 block`}
+                  />
                 )}
               </TableCell>
             </TableRow>
@@ -118,7 +113,7 @@ export function CandidateList({
                   }}
                 >
                   <p className="py-4 break-words whitespace-normal">
-                    {candidate.description}
+                    {candidate.candidateCode}
                   </p>
                 </div>
               </TableCell>

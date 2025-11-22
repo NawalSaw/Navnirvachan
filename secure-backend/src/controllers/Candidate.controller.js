@@ -1,11 +1,15 @@
-import Candidate from "../models/ballotDB/candidate.model.js";
+import { getConstituencyModel } from "../models/ballotDB/constituency.model.js";
+import { getCandidateModel } from "../models/ballotDB/candidate.model.js";
+
 import { ApiError } from "../utils/system/ApiError.js";
 import { ApiResponse } from "../utils/system/ApiResponse.js";
 import { ApiHandler } from "../utils/system/ApiHandler.js";
 import { uploadToCloudinary } from "../utils/third_party/CloudinaryUpload.js";
 import path from "path";
 import { appendAudit } from "../utils/database/EventLogger.js";
-import Constituency from "../models/ballotDB/constituency.model.js";
+
+const Constituency = getConstituencyModel();
+const Candidate = getCandidateModel();
 
 export const getCandidateById = ApiHandler(async function (req, res) {
   const { id } = req.params;
@@ -19,35 +23,61 @@ export const getCandidateById = ApiHandler(async function (req, res) {
 });
 
 export const getAllCandidatesByConstituency = ApiHandler(async (req, res) => {
-  const constituency = req.params.constituency;
+  const constituencyName = req.params.constituency;
 
-  if (!constituency) {
+  if (!constituencyName) {
     throw new ApiError(400, "Constituency is required");
   }
 
-  const candidates = await Candidate.find({ constituency });
+  // Find the constituency
+  const constituency = await Constituency.findOne({ name: constituencyName });
+
+  if (!constituency) {
+    throw new ApiError(404, "Constituency not found");
+  }
+
+  // Fetch candidates and *replace* the constituency with the actual name
+  const candidates = await Candidate.find({
+    constituency: constituency._id,
+  }).lean(); // <-- lean converts to plain JS objects (very important)
+
   if (!candidates.length) {
     throw new ApiError(404, "Candidates not found");
   }
 
-  res.json(new ApiResponse(200, candidates, "Candidates found successfully"));
+  // Replace ObjectId with name safely
+  const updatedCandidates = candidates.map((c) => ({
+    ...c,
+    constituency: constituencyName,
+  }));
+
+  res.json(
+    new ApiResponse(200, updatedCandidates, "Candidates found successfully")
+  );
 });
 
 export const setCandidate = ApiHandler(async function (req, res) {
   // find the assembly for the given constituency in the candidate
-  const { constituency, name, party, candidateCode } = req.body;
-  if (!constituency || !name || !party || !candidateCode) {
+  const { constituencyName, name, party, candidateCode } = req.body;
+  if (!constituencyName || !name || !party || !candidateCode) {
     throw new ApiError(400, "All fields are required");
   }
 
-  const image = req.file.path;
+  const image = req.file.path
   if (!image) {
+    const constituency = await Candidate.findOne({name: constituencyName})
     throw new ApiError(400, "Image is required");
   }
 
+  // find the constituency in the database
+  const constituency = await Constituency.findOne({ name: constituencyName });
+  if (!constituency) {
+    throw new ApiError(404, "Constituency not found");
+  }
+  
   const existingCandidate = await Candidate.findOne({
     name,
-    constituency,
+    constituency: constituencyName._id,
   });
   if (existingCandidate) {
     throw new ApiError(400, "Candidate already exists");
@@ -65,7 +95,7 @@ export const setCandidate = ApiHandler(async function (req, res) {
     name,
     party,
     image: imageUrl,
-    constituency,
+    constituency: constituency._id,
     candidateCode: candidateCode,
   });
 
@@ -73,7 +103,7 @@ export const setCandidate = ApiHandler(async function (req, res) {
     name,
     party,
     image: imageUrl,
-    constituency,
+    constituency: constituency._id,
     candidateCode: candidateCode,
   };
   const metadata = {
@@ -163,4 +193,13 @@ export const deleteConstituency = ApiHandler(async function (req, res) {
   };
   await appendAudit("Constituency deleted", payload, metadata);
   res.json(new ApiResponse(200, constituency, "Constituency deleted successfully"));
+});
+
+export const getConstituencyById = ApiHandler(async function (req, res) {
+  const { name } = req.params;
+  const constituency = await Constituency.findOne({ name });
+  if (!constituency) {
+    throw new ApiError(404, "Constituency not found");
+  }
+  res.json(new ApiResponse(200, constituency, "Constituency found successfully"));
 });

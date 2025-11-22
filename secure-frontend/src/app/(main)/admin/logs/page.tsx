@@ -1,55 +1,63 @@
 "use client"
 
 import ErrorPage from "@/components/ErrorPage";
-import EventGraph from "@/components/EventGraph";
+import EventDetailsSidebar from "@/components/EventDetailsSidebar";
 import EventTable from "@/components/EventTable";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useGetAllEvents } from "@/hooks/VoteApi";
+import { EventData, useGetAllEvents } from "@/hooks/VoteApi";
 import { Loader2 } from "lucide-react";
-import React from "react";
+import React, { useMemo, useState } from "react";
 
 function Page() {
   const { Events, isLoading, isError, error } = useGetAllEvents();
-  console.log(Events)
+const [selected, setSelected] = useState<EventData | null>(null);
+  const events = Events?.data || []
+  const sorted = useMemo(() => {
+    if (!events) return [];
+    return [...events].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }, [events]);
+
   if (isLoading) {
     return (
-      <div className="text-white text-4xl w-[90vw] h-[100vh] flex items-center justify-center">
-        <Loader2 size={50} className="animate-spin text-white" />
+      <div className="w-full min-h-screen flex items-center justify-center bg-gray-800">
+        <Loader2 className="animate-spin text-white" size={40} />
       </div>
     );
   }
 
-  if (isError) {
+  if (error) {
     return (
-      <ErrorPage />
+      <div className="w-full min-h-screen flex items-center justify-center">
+        <ErrorPage/>
+      </div>
     );
   }
 
   return (
-    <div className="bg-gray-700 flex flex-col gap-10 items-center justify-start text-white h-[90vh] mt-20 w-full mx-10 p-10">
-      <h1 className="text-4xl font-bold text-center">Logs</h1>
-      <Tabs defaultValue="table" className="w-full flex flex-col items-center">
-        <TabsList className="w-[80%] bg-gray-500 flex items-center justify-center">
-          <TabsTrigger value="table" className="text-gray-300">
-            Table
-          </TabsTrigger>
-          <TabsTrigger value="graph" className="text-gray-300">
-            Graph
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="table" className="w-[80%]">
-          <div className="mt-16 flex flex-col rounded-2xl h-[600px] scrollbar-none overflow-y-scroll items-center justify-start border border-gray-500 p-5">
-            <EventTable events={Events.data} />
-          </div>
-        </TabsContent>
+    <div className="min-h-full bg-gray-900 text-white p-4 md:p-8 mt-10">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-[1fr,auto] gap-6">
+        <div className="bg-gray-700 rounded-xl p-4 ">
+          <h2 className="text-2xl font-bold mb-4">Audit Log</h2>
+          <EventTable events={sorted} onSelect={(e) => setSelected(e)} />
+        </div>
 
-        <TabsContent value="graph" className="w-[80%]">
-          <div className="mt-16 flex flex-col h-[600px] rounded-2xl scrollbar-none overflow-y-scroll items-center justify-start border border-gray-500 p-5">
-            {/* @ts-ignore */}
-            <EventGraph logs={Events.data} />
+        {/* On wide screens we keep the sidebar visible area reserved */}
+        <div className="hidden md:block">
+          <div className="w-96">
+            {/* small static hint panel when nothing selected */}
+            {!selected ? (
+              <div className="bg-gray-700 rounded-xl p-4 h-full w-full">
+                <h3 className="font-semibold">Details</h3>
+                <p className="text-sm text-gray-300 mt-2">
+                  Click any row to view block details: hash chain, signature, and payload.
+                </p>
+              </div>
+            ) : null}
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
+
+      {/* Sidebar / bottom drawer */}
+      <EventDetailsSidebar event={selected} open={!!selected} onClose={() => setSelected(null)} />
     </div>
   );
 }

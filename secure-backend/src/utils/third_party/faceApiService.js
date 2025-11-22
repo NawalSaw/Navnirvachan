@@ -79,7 +79,6 @@ async function verifyFaces(referencePath, testPath) {
     testDetection.descriptor
   );
   const isVerified = distance < 0.6; // Recommended threshold
-  console.log("Distance:", distance);
   return { verified: isVerified, distance: distance.toFixed(4) };
 }
 

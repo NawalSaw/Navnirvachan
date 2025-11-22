@@ -5,21 +5,32 @@ import { AuthGuard } from "@/components/AuthGuard";
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <AuthGuard allowedRole="admin">
-      <div className="">
-        <SidebarProvider>
+        <div className="flex min-h-full bg-gray-900">
+      <SidebarProvider>
+
+          {/* Left Sidebar */}
           <AppSidebar />
-          <main className="flex items-center w-full">
-            <SidebarTrigger />
-            {children}
-          </main>
-          <RightDashboardSidebar />
-        </SidebarProvider>
-      </div>
+
+          {/* Main + Right Sidebar Container */}
+          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden scrollbar-hidden">
+
+            {/* Main Content */}
+            <main className="flex-1 p-4 sm:p-6 lg:p-10">
+              {children}
+            </main>
+
+            {/* Right Sidebar (Responsive) */}
+              <RightDashboardSidebar />
+
+          </div>
+
+      </SidebarProvider>
+        </div>
     </AuthGuard>
   );
 }

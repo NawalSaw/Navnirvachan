@@ -9,5 +9,10 @@ const constituencySchema = new mongoose.Schema({
   updatedAt: Date
 });
 
-const Constituency = ballotsDB.model("Constituency", constituencySchema);
-export default Constituency;
+let Constituency;
+export function getConstituencyModel() {
+  if (!Constituency) {
+    Constituency = ballotsDB.model("Constituency", constituencySchema);
+  }
+  return Constituency;
+}

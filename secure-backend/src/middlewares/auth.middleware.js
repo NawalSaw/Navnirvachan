@@ -1,14 +1,16 @@
-import Voter from "../models/voterDB/voter.model.js";
+import { getVoterModel } from "../models/voterDB/voter.model.js";
 import jwt from "jsonwebtoken";
 import { ApiHandler } from "../utils/system/ApiHandler.js";
-import Admin from "../models/voterDB/admin.model.js";
+import { getAdminModel } from "../models/voterDB/admin.model.js";
+
+const Voter = getVoterModel();
+const Admin = getAdminModel();
 
 const JWTCheck = ApiHandler(async (req, res, next) => {
   try {
     const token =
       req.cookies.token || req.headers?.authorization?.split(" ")[1];
-
-    if (req.user && req.user.verified) {
+    if (req.user && req.user.verified && req.user.role) {
       return next();
     }
 
@@ -27,13 +29,13 @@ const JWTCheck = ApiHandler(async (req, res, next) => {
       if (!admin) {
         return res.status(401).json({ message: "User not found" });
       }
-      req.user = admin;
-      req.role = "admin";
+      req.user = admin.toObject();
+      req.user.role = "admin";
       return next();
     }
 
-    req.user = user;
-    req.role = "voter";
+    req.user = user.toObject();
+    req.user.role = "voter";
     next();
   } catch (error) {
     console.log(error);

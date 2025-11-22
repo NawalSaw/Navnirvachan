@@ -19,7 +19,6 @@ export const sendOTP = async (phone, otp) => {
       to: phone,
       body: `Your OTP from Navnirvachan is ${otp}`,
     })
-    console.log(message);
     return true;
   } catch (error) {
     console.log(error);

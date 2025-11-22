@@ -35,6 +35,10 @@ otpSchema.methods.compareOTP = function (otp) {
   return this.otp === crypto.createHash("sha256").update(otp).digest("hex");
 };
 
-const OTP = votersDB.model("OTP", otpSchema);
-
-export default OTP;
+let OTP;
+export function getOTPModel() {
+  if (!OTP) {
+    OTP = votersDB.model("OTP", otpSchema);
+  }
+  return OTP;
+}

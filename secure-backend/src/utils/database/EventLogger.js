@@ -1,7 +1,8 @@
 import { signWithHSM } from "../../crypto/signWithHSM.js";
-import { AuditLog } from "../../models/auditDB/audit.log.model.js";
+import { getAuditLogModel } from "../../models/auditDB/audit.log.model.js";
+import crypto from "crypto";
 
-
+const AuditLog = getAuditLogModel();
 export const appendAudit = async (eventType, payload, meta) => {
   const payloadHash = crypto
     .createHash("sha256")
@@ -9,7 +10,7 @@ export const appendAudit = async (eventType, payload, meta) => {
     .digest("hex");
 
   const latest = await AuditLog.findOne().sort({ _id: -1 }).lean();
-  const prevHash = latest ? latest.entryHash : null;
+  const prevHash = latest ? latest.entryHash : "GENESIS_HASH";
 
   const entry = {
     timestamp: new Date(),
@@ -33,4 +34,3 @@ export const appendAudit = async (eventType, payload, meta) => {
 
   return { entryHash };
 };
-

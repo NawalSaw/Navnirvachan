@@ -18,4 +18,9 @@ const electionSchema = new mongoose.Schema({
 });
 
 const Election = ballotsDB.model("Election", electionSchema);
-export default Election;
+export function getElectionModel() {
+  if (!Election) {
+    Election = ballotsDB.model("Election", electionSchema);
+  }
+  return Election;
+}

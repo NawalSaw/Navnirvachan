@@ -12,6 +12,7 @@
   "type": "module",
   "description": "",
   "dependencies": {
+    "@faker-js/faker": "^10.1.0",
     "canvas": "^3.1.0",
     "cloudinary": "^2.6.0",
     "cookie-parser": "^1.4.7",

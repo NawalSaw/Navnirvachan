@@ -1,85 +1,58 @@
-"use client"
+// components/EventTable.tsx
+"use client";
 
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import React, { useState } from "react";
+import React from "react";
+import  { EventData } from "@/hooks/VoteApi";
 
-interface EventProp {
-  event: string;
-  location: string;
-  date: string;
-  description: string;
-  ClientDetails: {
-    IP: string;
-    network: string;
-    postal: string;
-    timezone: string;
-  };
-}
 
-function EventTable({ events }: { events: EventProp[] }) {
-  const [selectedCandidate, setSelectedCandidate] = useState("");
+export default function EventTable({
+  events, 
+  onSelect,
+}: {
+  events: EventData[];
+  onSelect: (ev: EventData) => void;
+}) {
   return (
-      <Table className="text-white scrollbar-none w-full">
-         <TableCaption>A list of your recent events.</TableCaption>
-         <TableHeader>
-           <TableRow>
-             <TableHead className="w-[100px] text-white">Serial</TableHead>
-             <TableHead className="text-white">Event</TableHead>
-             <TableHead className="text-white">Date</TableHead>
-             <TableHead className="text-white">Location</TableHead>
-             <TableHead className="text-white">IP</TableHead>
-             <TableHead className="text-white">Network</TableHead>
-             <TableHead className="text-white">Timezone</TableHead>
-             <TableHead className="text-white">Postal</TableHead>
-             {/* <TableHead className="text-white"></TableHead> */}
-           </TableRow>
-         </TableHeader>
-         <TableBody>
-           {events.map((event, index) => (
-             <React.Fragment key={index}>
-               {/* Main Row */}
-               <TableRow
-                 onClick={() =>
-                   setSelectedCandidate(
-                     selectedCandidate === String(index) ? "" : String(index)
-                   )
-                 }
-                 className="z-40 border-none w-full cursor-pointer"
-               >
-                 <TableCell>{index + 1}</TableCell>
-                 <TableCell className="font-medium">{event.event}</TableCell>
-                 <TableCell>{event.date}</TableCell>
-                 <TableCell>{event.location}</TableCell>
-                 <TableCell>{event.ClientDetails.IP}</TableCell>
-                 <TableCell>{event.ClientDetails.network}</TableCell>
-                 <TableCell>{event.ClientDetails.timezone}</TableCell>
-                 <TableCell>{event.ClientDetails.postal}</TableCell>
-               </TableRow>
-   
-               {/* Expandable Description Row with Smooth Transition */}
-               <TableRow
-                 key={`description-${index}`}
-                 className="border-none w-full"
-               >
-                 <TableCell colSpan={8} className="p-0 w-full">
-                   <div
-                     className={`overflow-hidden transition-[max-height] duration-600 ease-in-out bg-gray-800 text-gray-300 px-6 w-full`}
-                     style={{
-                       maxHeight:
-                         selectedCandidate === String(index) ? "400px" : "0px",
-                     }}
-                   >
-                     <p className="py-4 break-words whitespace-normal">
-                       {event.description}
-                     </p>
-                   </div>
-                 </TableCell>
-               </TableRow>
-             </React.Fragment>
-           ))}
-         </TableBody>
-       </Table>
+    <div className="w-full overflow-x-auto">
+      <table className="min-w-full text-left divide-y divide-gray-700">
+        <caption className="sr-only">Audit Events</caption>
+        <thead className="bg-gray-800 sticky top-0">
+          <tr>
+            <th className="px-4 py-3 text-sm text-gray-300">#</th>
+            <th className="px-4 py-3 text-sm text-gray-300">Time</th>
+            <th className="px-4 py-3 text-sm text-gray-300">Event</th>
+            <th className="hidden md:table-cell px-4 py-3 text-sm text-gray-300">Payload Hash</th>
+            <th className="hidden lg:table-cell px-4 py-3 text-sm text-gray-300">Prev Hash</th>
+            <th className="px-4 py-3 text-sm text-gray-300 text-right">Action</th>
+          </tr>
+        </thead>
+
+        <tbody className="bg-gray-800 divide-y divide-gray-600 ">
+          {events.map((ev, idx) => (
+            <tr
+              key={ev._id}
+              onClick={() => onSelect(ev)}
+              className="hover:bg-gray-600 cursor-pointer transition-colors"
+            >
+              <td className="px-4 py-3 text-sm text-gray-200">{idx + 1}</td>
+              <td className="px-4 py-3 text-sm text-gray-300">
+                {new Date(ev.timestamp).toLocaleString()}
+              </td>
+              <td className="px-4 py-3 text-sm font-medium text-white">{ev.eventType}</td>
+              <td className="hidden md:table-cell px-4 py-3 text-sm text-gray-300 truncate max-w-[220px]">{ev.payloadHash}</td>
+              <td className="hidden lg:table-cell px-4 py-3 text-sm text-gray-300 truncate max-w-[220px]">{ev.prevHash}</td>
+              <td className="px-4 py-3 text-sm text-right">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onSelect(ev); }}
+                  className="text-sm px-3 py-1 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  View
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
-
-export default EventTable;

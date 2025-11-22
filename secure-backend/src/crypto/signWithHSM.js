@@ -11,17 +11,14 @@ dotenv.config();
 
 export async function signWithHSM(hash) {
   try {
-    const privateKey = process.env.HSM_PRIVATE_KEY; // PEM text stored in env
+    const key = process.env.HMAC_KEY;
+    if (!key) throw new Error("HMAC key not configured");
 
-    if (!privateKey) {
-      throw new Error("HSM private key not configured");
-    }
+    const signature = crypto
+      .createHmac("sha256", key)
+      .update(hash)
+      .digest("hex");
 
-    const signer = crypto.createSign("RSA-SHA256");
-    signer.update(hash);
-    signer.end();
-
-    const signature = signer.sign(privateKey, "hex");
     return signature;
   } catch (err) {
     console.error("HSM signing error:", err);

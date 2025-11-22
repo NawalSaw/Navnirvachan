@@ -1,8 +1,9 @@
-import Election from "../models/ballotDB/Election.model.js";
+import { getElectionModel } from "../models/ballotDB/Election.model.js";
+
+const Election = getElectionModel();
 
 export const checkElectionActive = async (req, res, next) => {
   const { electionID } = req.params || req.body;
-
   const election = await Election.findById(electionID);
   if (!election) return res.status(404).json({ msg: "Election not found" });
   

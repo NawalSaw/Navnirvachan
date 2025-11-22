@@ -1,13 +1,21 @@
 import path from "path";
 
 // models
-import VoterList from "../models/voterDB/VoterList.model.js";
-import OTP from "./../models/voterDB/otp.model.js";
-import Admin from "./../models/voterDB/admin.model.js";
-import Candidate from "../models/ballotDB/candidate.model.js";
-import { Voter } from "./../models/voterDB/voter.model.js";
-import { AdminApprovalRequest } from "../models/auditDB/adminApprovalRequest.model.js";
-import CandidateWorks from "../models/ballotDB/CandidateWorks.model.js";
+import { getVoterListModel } from "../models/voterDB/VoterList.model.js";
+import { getOTPModel } from "./../models/voterDB/otp.model.js";
+import { getAdminModel } from "./../models/voterDB/admin.model.js";
+import { getCandidateModel } from "../models/ballotDB/candidate.model.js";
+import { getVoterModel } from "./../models/voterDB/voter.model.js";
+import { getAdminApprovalRequestModel } from "../models/auditDB/adminApprovalRequest.model.js";
+import { getCandidateWorksModel } from "../models/ballotDB/CandidateWorks.model.js";
+
+const VoterList = getVoterListModel();
+const OTP = getOTPModel();
+const Admin = getAdminModel();
+const Candidate = getCandidateModel();
+const Voter = getVoterModel();
+const AdminApprovalRequest = getAdminApprovalRequestModel();
+const CandidateWorks = getCandidateWorksModel();
 
 // utils
 import { ApiError } from "./../utils/system/ApiError.js";
@@ -19,6 +27,16 @@ import { uploadToCloudinary } from "../utils/third_party/CloudinaryUpload.js";
 import { cleanupFiles } from "./../utils/system/fileCleanup.js";
 import { appendAudit } from "../utils/database/EventLogger.js";
 import { webSearch } from "../utils/third_party/web_search.js";
+
+// controllers
+const isE164 = (phone) => {
+  const regex = /^\+[1-9]{1}[0-9]{3,14}$/;
+  return regex.test(phone);
+};
+const isEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
 
 export const registerVoter = ApiHandler(async function (req, res) {
   const file = req.file.path;
@@ -34,20 +52,20 @@ export const registerVoter = ApiHandler(async function (req, res) {
     throw new ApiError(400, "You are not in the voterlist");
   }
 
-  const isOtpValid = await OTP.findOne({
-    phone: voterInVoterList.phone,
-    seen: false,
-  });
-  if (!isOtpValid || !isOtpValid.compareOTP(otp)) {
-    throw new ApiError(400, "Invalid OTP");
-  }
-  isOtpValid.seen = true;
-  await isOtpValid.save();
+  // const isOtpValid = await OTP.findOne({
+  //   phone: voterInVoterList.voters[0].phone,
+  //   seen: false,
+  // });
+  // if (!isOtpValid || !isOtpValid.compareOTP(otp)) {
+  //   throw new ApiError(400, "Invalid OTP");
+  // }
+  // isOtpValid.seen = true;
+  // await isOtpValid.save();
   try {
     // Photo verification
-    const inputImage = path.resolve(voterInVoterList.image);
+    const inputImage = voterInVoterList.voters[0].image;
     const filePath = path.resolve(file);
-    const result = await verifyFaces(inputImage, filePath);
+    const result = await verifyFaces(filePath, inputImage);
     if (!result.verified) {
       throw new ApiError(400, "Face verification failed", result.reason);
     }
@@ -64,12 +82,11 @@ export const registerVoter = ApiHandler(async function (req, res) {
       address: voterInVoterList.voters[0].address,
       verified: true,
     });
-
     if (!voter) {
       throw new ApiError(500, "Voter registration failed");
     }
 
-    event_payload = {
+    const event_payload = {
       voterId,
       email: voter.email,
       constituency: voter.constituency,
@@ -77,7 +94,7 @@ export const registerVoter = ApiHandler(async function (req, res) {
       phone: voter.phone,
       address: voter.address,
     };
-    metadata = {
+    const metadata = {
       ip: req.ip,
       userAgent: req.headers["user-agent"],
       location: req.headers["x-forwarded-for"],
@@ -119,8 +136,7 @@ export const SendUserOTP = ApiHandler(async function (req, res) {
   }
 
   const voter = await VoterList.compareVoterId(voterId);
-
-  if (!voter || voter.voters.length > 0) {
+  if (!voter || voter.voters.length < 0) {
     throw new ApiError(404, "Voter not found");
   }
 
@@ -134,7 +150,7 @@ export const SendUserOTP = ApiHandler(async function (req, res) {
     throw new ApiError(500, "OTP could not be sent");
   }
 
-  const otp = await OTP.create({ phone: voter.phone, otp: code });
+  const otp = await OTP.create({ phone: voter.voters[0].phone, otp: code });
 
   console.log(otp);
   res.json(new ApiResponse(200, "OTP sent successfully"));
@@ -142,21 +158,7 @@ export const SendUserOTP = ApiHandler(async function (req, res) {
 
 export const addAdmin = ApiHandler(async function (req, res) {
   // check for approval request
-  const { constituency } = req.body;
-  const approvalRequest = await AdminApprovalRequest.findOne({
-    constituency,
-    request: "addAdmin",
-    status: "approved",
-    requestedBy: req.user._id,
-  });
-  if (!approvalRequest) {
-    throw new ApiError(
-      400,
-      "No pending approval request for this constituency"
-    );
-  }
-
-  const { email, age, phone, address, name } = req.body;
+  const { email, age, phone, address, name, constituency } = req.body;
   const image = req.file.path;
 
   if (
@@ -170,9 +172,9 @@ export const addAdmin = ApiHandler(async function (req, res) {
   ) {
     throw new ApiError(400, "All fields are required");
   }
-  // TODO: phone number validation
-  if (phone.length !== 10) {
-    throw new ApiError(400, "Phone number must be 10 digits");
+  // check E164 format of phone number
+  if (!/^\+?[1-9]\d{1,14}$/.test(phone)) {
+    throw new ApiError(400, "Phone number must be in E164 format");
   }
 
   if (age < 18) {
@@ -308,7 +310,7 @@ export const verifyAdmin = ApiHandler(async function (req, res) {
     throw new ApiError(400, "OTP not found");
   }
 
-  if (!otpFromDB.compareOtp(otp)) {
+  if (!otpFromDB.compareOTP(otp)) {
     throw new ApiError(400, "Invalid OTP");
   }
 
@@ -324,7 +326,7 @@ export const verifyAdmin = ApiHandler(async function (req, res) {
 
   const accessToken = await admin.generateAccessToken();
 
-  event_payload = {
+  const event_payload = {
     name: admin.name,
     constituency: admin.constituency,
     age: admin.age,
@@ -333,14 +335,14 @@ export const verifyAdmin = ApiHandler(async function (req, res) {
     image: admin.image,
     address: admin.address,
   };
-  metadata = {
+  const metadata = {
     ip: req.ip,
     userAgent: req.headers["user-agent"],
     location: req.headers["x-forwarded-for"],
     browser: req.headers["user-agent"],
     os: req.headers["os"],
     time: new Date().toISOString(),
-    verifiedby: req.user._id,
+    verifiedby: admin._id,
   };
   await appendAudit("Admin verified", event_payload, metadata);
   res
@@ -348,7 +350,7 @@ export const verifyAdmin = ApiHandler(async function (req, res) {
       httpOnly: true,
       sameSite: "none",
       secure: true,
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
     })
     .json(new ApiResponse(200, admin, "Admin verified successfully"));
 });
@@ -361,7 +363,6 @@ export const getOTP = ApiHandler(async function (req, res) {
   }
 
   const admin = await Admin.findOne({ email });
-
   if (!admin) {
     throw new ApiError(404, "Admin not found");
   }
@@ -381,18 +382,13 @@ export const getOTP = ApiHandler(async function (req, res) {
 });
 
 export const GetCandidateWorks = ApiHandler(async (req, res) => {
-  const { constituency, name, candidateCode } = req.body;
+  const { candidateCode } = req.body;
 
-  if (!constituency || !name || !candidateCode) {
-    throw new ApiError(
-      400,
-      "Constituency, name, and candidate code are required"
-    );
+  if (!candidateCode) {
+    throw new ApiError(400, "candidate code are required");
   }
 
   const candidate = await Candidate.findOne({
-    constituency,
-    name,
     candidateCode,
   });
   if (!candidate) {
@@ -408,7 +404,7 @@ export const GetCandidateWorks = ApiHandler(async (req, res) => {
 
   const works = webSearch("Tell works done by " + name + " in " + constituency);
   await CandidateWorks.create({ candidateID: candidate._id, works });
-  res.json(works);
+  res.json(new ApiResponse(200, works, "Candidate works found successfully"));
 });
 
 export const addVotersInVoterlist = ApiHandler(async (req, res) => {
@@ -444,11 +440,9 @@ export const addVotersInVoterlist = ApiHandler(async (req, res) => {
     !Array.isArray(voters) ||
     voters.length === 0
   ) {
-    return res
-      .status(400)
-      .json({
-        message: "Election, constituency, and voters array are required",
-      });
+    return res.status(400).json({
+      message: "Election, constituency, and voters array are required",
+    });
   }
 
   // Validate voter fields
@@ -469,6 +463,20 @@ export const addVotersInVoterlist = ApiHandler(async (req, res) => {
           voter,
         });
       }
+    }
+    //check phone number format E164
+    if (!isE164(voter.phone)) {
+      return res.status(400).json({
+        message: `Voter at index ${index} has invalid phone number format`,
+        voter,
+      });
+    }
+    //check email format
+    if (!isEmail(voter.email)) {
+      return res.status(400).json({
+        message: `Voter at index ${index} has invalid email format`,
+        voter,
+      });
     }
     // Assign a temporary voterId if missing
     if (!voter.voterId) voter.voterId = crypto.randomUUID();
@@ -502,4 +510,92 @@ export const getVotersByElection = ApiHandler(async (req, res) => {
     throw new ApiError(404, "Voters not found");
   }
   res.json(new ApiResponse(200, voters.length, "Votes found successfully"));
+});
+
+export const addAdminApprovalRequest = ApiHandler(async (req, res) => {
+  const { request, constituency } = req.body;
+  if (!request || !constituency) {
+    throw new ApiError(400, "Request and constituency are required");
+  }
+  const approvalRequest = new AdminApprovalRequest({
+    request,
+    constituency,
+    requestedBy: req.user._id,
+  });
+  await approvalRequest.save();
+  res.json(new ApiResponse(200, approvalRequest, "Approval request sent"));
+});
+
+export const getAdminApprovalRequests = ApiHandler(async (req, res) => {
+  const constituency = req.user.constituency;
+  if (!constituency) {
+    throw new ApiError(400, "Constituency is required");
+  }
+  const approvalRequests = await AdminApprovalRequest.find({
+    constituency,
+  });
+  res.json(new ApiResponse(200, approvalRequests, "Approval requests found"));
+});
+
+export const approveAdminApprovalRequest = ApiHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    throw new ApiError(400, "Request ID is required");
+  }
+  const approvalRequest = await AdminApprovalRequest.findById(id);
+  if (!approvalRequest) {
+    throw new ApiError(404, "Approval request not found");
+  }
+  if (approvalRequest.status !== "pending") {
+    throw new ApiError(400, "Approval request is not pending");
+  }
+  if (req.user._id === approvalRequest.requestedBy) {
+    throw new ApiError(400, "You cannot approve your own Request");
+  }
+  if (approvalRequest.approvals.includes(req.user._id)) {
+    throw new ApiError(400, "You have already approved this request");
+  }
+  approvalRequest.approvals.push(req.user._id);
+  if (approvalRequest.approvals.length >= 2) {
+    approvalRequest.status = "approved";
+  }
+  await approvalRequest.save();
+  res.json(new ApiResponse(200, approvalRequest, "Approval request approved"));
+});
+
+export const rejectAdminApprovalRequest = ApiHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    throw new ApiError(400, "Request ID is required");
+  }
+  const approvalRequest = await AdminApprovalRequest.findById(id);
+  if (!approvalRequest) {
+    throw new ApiError(404, "Approval request not found");
+  }
+  if (approvalRequest.status !== "pending") {
+    throw new ApiError(400, "Approval request is not pending");
+  }
+  if (req.user._id === approvalRequest.requestedBy) {
+    throw new ApiError(400, "You cannot approve your own Request");
+  }
+  if (approvalRequest.rejections.includes(req.user._id)) {
+    throw new ApiError(400, "You have already rejected this request");
+  }
+  approvalRequest.rejections.push(req.user._id);
+  if (approvalRequest.rejections.length >= 2) {
+    approvalRequest.status = "rejected";
+  }
+  await approvalRequest.save();
+  res.json(new ApiResponse(200, approvalRequest, "Approval request rejected"));
+});
+
+export const logout = ApiHandler(async (req, res) => {
+  if (!req.user) {
+    return res
+      .status(401)
+      .json(new ApiResponse(401, null, "You are not logged in"));
+  }
+  res
+    .clearCookie("token")
+    .json(new ApiResponse(200, null, "Logout successful"));
 });

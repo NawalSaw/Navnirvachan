@@ -1,12 +1,12 @@
 "use client";
 
-import { CandidateList } from "@/components/CandidateList";
 import CircularProgress from "@/components/CircularProgress";
 import ErrorPage from "@/components/ErrorPage";
 import ResultGraph from "@/components/ResultGraph";
+import { ResultsList } from "@/components/ResultsList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  useGetElectionByLocationAdmin,
+  useGetElectionByConstituency,
   useGetElectionProgress,
   useGetTotalVoteCount,
 } from "@/hooks/VoteApi";
@@ -14,93 +14,119 @@ import { useGetCurrentVoter } from "@/hooks/voterApi";
 import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
-
 function Page() {
-  const {
-    data: currentVoter,
-    error,
-    isError,
-    isPending,
-  } = useGetCurrentVoter();
+  const { data: currentVoter, error, isError, isPending } = useGetCurrentVoter();
 
-  const address = currentVoter?.permanentAddress.split(",").at(-3)?.trim();
-  
-  const { election, isPending: electionIsLoading } =
-  useGetElectionByLocationAdmin(address || "");
-  
-  const { electionProgress } = useGetElectionProgress(election?.data?._id || "");
+  const address = currentVoter?.data?.constituency;
+
+  const { election, isPending: electionIsLoading , error: electionError } =
+    useGetElectionByConstituency(address || "");
+
+  const { electionProgress } = useGetElectionProgress(
+    election?.data?._id || ""
+  );
 
   const { totalVoteCount, isPending: totalVoteCountIsLoading } =
-    useGetTotalVoteCount(election?.data._id || "");
+    useGetTotalVoteCount(election?.data?._id || "");
 
-if(isError && !isPending){
-    toast.error(error?.message || "failed to fetch the User")
+  // Error handling
+  if (isError && !isPending) {
+    toast.error(error?.message || "Failed to fetch user");
+
     return (
-        <ErrorPage />
-    )
-}
-  
-  if(totalVoteCountIsLoading || electionIsLoading){
-    return (
-      <Loader2 />
+      <div className="w-screen h-screen flex justify-center items-center text-white">
+
+      <ErrorPage />
+      </div>
     )
   }
 
-  if (!totalVoteCountIsLoading && !totalVoteCount){
-    return(
-      <h1>Failed to Fetch</h1>
+  if (electionError && !electionIsLoading) {
+    toast.error(electionError?.message || "Failed to fetch election");
+    return (
+      <div className="w-screen h-screen flex justify-center items-center text-white">
+
+      <ErrorPage /> 
+      </div>
+    )
+  }
+
+  // Loading state
+  if (totalVoteCountIsLoading || electionIsLoading || isPending) {
+    return (
+      <div className="w-full h-screen flex justify-center items-center text-white">
+        <Loader2 className="animate-spin" size={50} />
+      </div>
+    );
+  }
+
+  if (!totalVoteCount) {
+    return (
+      <div className="w-full h-screen flex justify-center items-center text-white">
+        <ErrorPage />
+      </div>
     )
   }
 
   return (
-    <div className="w-[100vw] z-[500] h-[99vh] flex items-center justify-center">
-      <div
-        className="text-white relative h-[90%] bg-gray-700 p-10 rounded-3xl w-[70%] flex flex-col items-center 
-    justify-center gap-10"
-      >
-        <Tabs
-          defaultValue="account"
-          className="w-full flex flex-col absolute top-10 items-center justify-center"
-        >
-          <TabsList className="w-[80%]   bg-gray-500 flex items-center justify-center">
-            <TabsTrigger value="account" className="text-gray-300">
+    <div className="w-full min-h-screen flex items-center justify-center p-4">
+      <div className="text-white bg-gray-700 w-full max-w-6xl rounded-3xl p-6 md:p-10 shadow-xl">
+        <Tabs defaultValue="account" className="w-full flex flex-col">
+          <TabsList className="w-full bg-gray-600 rounded-xl flex justify-center p-2">
+            <TabsTrigger value="account" className="text-gray-200">
               Account
             </TabsTrigger>
-            <TabsTrigger value="password" className="text-gray-300">
-              Password
+            <TabsTrigger value="password" className="text-gray-200">
+              Candidates
             </TabsTrigger>
           </TabsList>
+
+          {/* ACCOUNT TAB */}
           <TabsContent
             value="account"
-            className={
-              "flex pt-10 justify-center gap-10 items-center flex-col w-full"
-            }
+            className="flex flex-col gap-10 items-center w-full pt-10"
           >
-            <div className="flex justify-around items-center gap-10 w-[80%] bg-gray-600 p-5">
-              <span className="w-[50%]">
-                <h1 className="text-xl font-bold">Election progress {electionProgress?.data?.percentage}%</h1>
-                <div className="h-6 w-[100%] bg-gray-200 rounded-full mt-5">
-                  <div className={`h-6 w-[${electionProgress?.data?.percentage}%] bg-blue-500 rounded-full`}></div>
+            {/* Progress Section */}
+            <div className="w-full max-w-4xl bg-gray-600 rounded-xl p-5 flex flex-col md:flex-row items-center justify-between gap-6">
+              <span className="w-full md:w-1/2">
+                <h1 className="text-xl font-bold">
+                  Election Progress {electionProgress?.data?.percentage}%
+                </h1>
+
+                <div className="h-4 w-full bg-gray-300 rounded-full mt-4">
+                  <div
+                    className="h-4 bg-blue-500 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${electionProgress?.data?.percentage || 0}%`,
+                    }}
+                  ></div>
                 </div>
               </span>
-              <CircularProgress percentage={electionProgress?.data?.percentage} size={150} strokeWidth={20} />
+
+              <div className="flex justify-center md:w-1/2">
+                <CircularProgress
+                  percentage={electionProgress?.data?.percentage}
+                  size={140}
+                  strokeWidth={18}
+                />
+              </div>
             </div>
-            <div className="bg-gray-600 z-[1] w-[80%] h-[50vh] rounded-xl p-2 pt-20">
+
+            {/* Graph Section */}
+            <div className="w-full max-w-4xl bg-gray-600 rounded-xl p-4 h-[50vh] min-h-[350px]">
               {/* @ts-ignore */}
               <ResultGraph candidates={totalVoteCount?.data} />
             </div>
           </TabsContent>
+
+          {/* CANDIDATES TAB */}
           <TabsContent
             value="password"
-            className="flex px-40 pt-20 justify-center h-full gap-10 items-center flex-col w-full"
+            className="w-full flex justify-center pt-10"
           >
-            <CandidateList
-            // @ts-ignore
-              candidates={totalVoteCount?.data}
-              vote={false}
-              showVotes={true}
-              deleteButton={false}
-            />
+            <div className="w-full max-w-5xl bg-gray-600 rounded-xl p-4 overflow-auto">
+              <ResultsList results={totalVoteCount?.data || []} />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

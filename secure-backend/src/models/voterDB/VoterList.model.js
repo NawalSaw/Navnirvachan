@@ -4,7 +4,7 @@ import crypto from "crypto";
 
 const voterSchema = new mongoose.Schema(
   {
-    voterId: { type: String, required: true }, // EC-issued unique voter ID
+    voterId: { type: String, required: true}, // EC-issued unique voter ID
     image: { type: String, required: true },
     phone: { type: String, required: true },
     email: { type: String, required: true },
@@ -32,11 +32,11 @@ const voterListSchema = new mongoose.Schema({
   voters: { type: [voterSchema], default: [] }, // array of voter objects
   createdAt: { type: Date, default: Date.now },
   updatedAt: Date,
-});
+});// 69214ef2082d179afe6c26ff 691fd95dd296a9d4ab60bd23
 
 // Optional index to ensure no duplicate voterId within same election+constituency
 voterListSchema.index(
-  { election: 1, constituency: 1, "voters.voterId": 1 },
+  { election: 1, constituency: 1},
   { unique: true }
 );
 voterListSchema.pre("save", function (next) {
@@ -55,11 +55,15 @@ voterListSchema.pre("save", function (next) {
 voterListSchema.statics.compareVoterId = async function (voterId) {
   const hashedId = crypto.createHash("sha256").update(voterId).digest("hex");
   const voterList = await this.findOne({
-    "voters.voterId": hashedId
+    "voters.voterId": hashedId,
   });
   return voterList;
 };
 
-const VoterList = votersDB.model("VoterList", voterListSchema);
-
-export default VoterList;
+let VoterList;
+export function getVoterListModel() {
+  if (!VoterList) {
+    VoterList = votersDB.model("VoterList", voterListSchema);
+  }
+  return VoterList;
+}

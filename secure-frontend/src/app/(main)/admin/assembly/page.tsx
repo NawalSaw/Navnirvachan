@@ -1,51 +1,72 @@
 "use client";
 
-import DynamicInput from "@/components/DynamicInput";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
-import { useCreateAssembly } from "@/hooks/candidateApi";
+import { useCreateConstituency } from "@/hooks/candidateApi";
 import React from "react";
 
 function Page() {
   const [form, setForm] = React.useState({
-    areasUnder: [""],
     name: "",
-    state: "",
-    location: "",
+    code: "",
+    region: "",
   });
-  const { createAssemblyAsync, isPending } = useCreateAssembly();
+
+  const { createConstituencyAsync, isPending } = useCreateConstituency();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
   return (
-    <div className="bg-gray-700 flex flex-col gap-20 items-center justify-center text-white h-[90vh] mt-20 w-full mx-10">
-      <h1 className="text-4xl font-bold text-center">Create Assembly</h1>
-      <div className="w-[500px] flex flex-col gap-6">
+    <div className="bg-gray-800 min-h-full pt-18 pb-10 mt-18 text-white flex flex-col items-center px-4">
+      <h1 className="text-3xl md:text-4xl font-bold text-center mb-10">
+        Create Constituency
+      </h1>
+
+      {/* Responsive Form Container */}
+      <div
+        className="
+          w-full max-w-lg 
+          bg-gray-800/40 p-6 
+          rounded-xl 
+          flex flex-col gap-6
+        "
+      >
         <Input
           placeholder="Name"
           name="name"
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="border-2 rounded-lg border-orange-400 h-14"
+          onChange={handleChange}
+          value={form.name}
+          className="border-2 border-orange-400 h-14"
         />
+
         <Input
-          placeholder="state"
-          name="state"
-          onChange={(e) => setForm({ ...form, state: e.target.value })}
-          className="border-2 rounded-lg border-orange-400 h-14"
+          placeholder="State / Region (optional)"
+          name="region"
+          onChange={handleChange}
+          value={form.region}
+          className="border-2 border-orange-400 h-14"
         />
+
         <Input
-          placeholder="location"
-          name="location"
-          onChange={(e) => setForm({ ...form, location: e.target.value })}
-          className="border-2 rounded-lg border-orange-400 h-14"
+          placeholder="Location / Code"
+          name="code"
+          onChange={handleChange}
+          value={form.code}
+          className="border-2 border-orange-400 h-14"
         />
-        <p className="font-bold text-md">Areas under:</p>
-        <DynamicInput
-          onChange={(areas) => setForm({ ...form, areasUnder: areas })}
-        />
+        {/* You can hook DynamicInput here later */}
         <Button
           disabled={isPending}
-          onClick={() => createAssemblyAsync(form)}
-          className="bg-orange-400 rounded-full w-full h-14 text-xl border-b-4 border-orange-800 active:border-b-0 hover:bg-orange-500"
+          onClick={() => createConstituencyAsync(form)}
+          className="
+            bg-orange-400 rounded-full w-full h-14 text-xl font-bold 
+            border-b-4 border-orange-800 
+            active:border-b-0 hover:bg-orange-500
+          "
         >
-          {isPending ? "Creating..." : "Create Assembly"}
+          {isPending ? "Creating..." : "Create Constituency"}
         </Button>
       </div>
     </div>

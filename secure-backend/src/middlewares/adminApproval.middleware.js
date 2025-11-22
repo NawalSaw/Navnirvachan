@@ -1,11 +1,13 @@
-import { AdminApprovalRequest } from "../models/auditDB/adminApprovalRequest.model.js";
+import { getAdminApprovalRequestModel } from "../models/auditDB/adminApprovalRequest.model.js";
+import { ApiError } from "../utils/system/ApiError.js";
+import { ApiHandler } from "../utils/system/ApiHandler.js";
 
+const AdminApprovalRequest = getAdminApprovalRequestModel();
 export const AdminApprovalCheck = (requestType) => {
-  return async (req, _, next) => {
-    const { constituency } = req.user.constituency;
-
+  return ApiHandler( async (req, _, next) => {
+    const constituency = req.user.constituency;
     if (!constituency) {
-      throw new ApiError(400, "You are not authorized to add candidates");
+      throw new ApiError(400, "You are not authorized to perform this action");
     }
 
     const approvalRequest = await AdminApprovalRequest.findOne({
@@ -22,13 +24,12 @@ export const AdminApprovalCheck = (requestType) => {
     }
 
     if (
-      approvalRequest.approvals.length > approvalRequest.rejections.length &&
-      approvalRequest.approvals.length > 5 &&
-      approvalRequest.status === "approved"
+      (approvalRequest.approvals.length > (approvalRequest?.rejections?.length || 0)) &&
+      (approvalRequest.approvals.length >= 2) &&
+      (approvalRequest.status === "approved")
     ) {
       return next();
     }
-
     throw new ApiError(400, "You are not authorized to perform this action");
-  };
+  });
 };

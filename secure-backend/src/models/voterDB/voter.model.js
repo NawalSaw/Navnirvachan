@@ -44,6 +44,10 @@ voterSchema.methods.generateAccessToken = async function () {
 
 
 voterSchema.index({ date: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 15 }); // Expires after 30 days
-
-export const Voter = votersDB.model("Voter", voterSchema);
-export default Voter;
+let Voter;
+export function getVoterModel() {
+  if (!Voter) {
+    Voter = votersDB.model("Voter", voterSchema);
+  }
+  return Voter;
+}

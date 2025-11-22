@@ -4,7 +4,7 @@ import React from "react";
 import { CandidateList } from "@/components/CandidateList";
 import {
   useDeleteCandidate,
-  useGetAllCandidatesByLocation,
+  useGetAllCandidatesByConstituency,
 } from "@/hooks/candidateApi";
 import { useGetCurrentVoter } from "@/hooks/voterApi";
 import { Loader2 } from "lucide-react";
@@ -13,49 +13,57 @@ import ErrorPage from "@/components/ErrorPage";
 function Page() {
   const {
     data: currentAdmin,
-    error,
-    isError,
-    isPending,
+    isPending: isAdminLoading,
+    isError: isAdminError,
   } = useGetCurrentVoter();
 
-  const address = currentAdmin?.WorkingAddress;
-  const { candidates, isPending: isVoterPending } =
-    useGetAllCandidatesByLocation(address || "");
+  const constituency = currentAdmin?.data?.constituency || "";
+  const {
+    candidates,
+    isPending: isCandidatesLoading,
+    isError: isCandidatesError,
+  } = useGetAllCandidatesByConstituency(constituency);
+console.log(candidates);
+  const { deleteCandidateAsync, isPending: isDeletePending } =
+    useDeleteCandidate();
 
-  const { deleteCandidateAsync } = useDeleteCandidate();
-
-  console.log(candidates)
-  if (
-    (isPending && !isError && !currentAdmin) ||
-    (isVoterPending && !candidates)
-  ) {
+  // LOADING STATE
+  if (isAdminLoading || isCandidatesLoading) {
     return (
-      <div className="text-white text-4xl w-[90vw] h-[100vh] flex items-center justify-center">
-        <Loader2 size={50} className="animate-spin text-white" />
+      <div className="text-white text-4xl w-full h-screen flex items-center justify-center">
+        <Loader2 size={50} className="animate-spin" />
       </div>
     );
   }
 
+  // ERROR STATE
   if (
-    (!candidates && !isVoterPending || !candidates.data)
+    isAdminError ||
+    isCandidatesError ||
+    !currentAdmin ||
+    !candidates ||
+    !candidates.data
   ) {
-    return (
-      <ErrorPage/>
-    );
+    return <ErrorPage />;
   }
 
   const handleClick = (candidateID: string) => {
-    if (currentAdmin) {
-      deleteCandidateAsync(candidateID);
-    }
+    deleteCandidateAsync(candidateID);
   };
+
   return (
-    <div className="bg-gray-700 flex flex-col gap-20 items-center justify-center text-white h-[90vh] mt-20 w-full mx-10 p-10">
-      <h1 className="text-4xl font-bold text-center">Manage Candidates</h1>
-      <div className="w-[800px] h-[800px] overflow-y-scroll scrollbar-none flex flex-col gap-6">
+    <div className="bg-gray-800 min-h-full w-full text-white pt-14 px-4 flex flex-col items-center mt-18">
+
+      {/* Title */}
+      <h1 className="text-3xl md:text-4xl font-bold text-center mb-10">
+        Manage Candidates
+      </h1>
+
+      {/* Scrollable List Container */}
+      <div className="w-full max-w-3xl h-[60vh] md:h-[70vh] overflow-y-auto scrollbar-none rounded-lg flex flex-col gap-6 p-4 bg-gray-600/40">
+
         <CandidateList
           handleClick={handleClick}
-          vote={false}
           candidates={candidates.data}
         />
       </div>

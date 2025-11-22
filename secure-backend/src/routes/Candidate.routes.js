@@ -6,6 +6,7 @@ import {
   getAllCandidatesByConstituency,
   getCandidateById,
   setCandidate,
+  getConstituencyById,
 } from "../controllers/Candidate.controller.js";
 import { isVerifiedAdmin } from "./../middlewares/admin.middleware.js";
 import JWTCheck from "./../middlewares/auth.middleware.js";
@@ -32,7 +33,8 @@ router
     isVerifiedAdmin,
     AdminApprovalCheck("removeCandidate"),
     deleteCandidate
-  ); //
+); //
+  router.route("/constituency/:name").get(getConstituencyById); //
 router
   .route("/constituency")
   .post(
@@ -42,7 +44,7 @@ router
     createConstituency
   ); //
 router
-  .route("/assembly/:id")
+  .route("/constituency/:id")
   .delete(
     JWTCheck,
     isVerifiedAdmin,

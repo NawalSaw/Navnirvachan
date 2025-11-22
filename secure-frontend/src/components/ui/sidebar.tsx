@@ -129,23 +129,29 @@ function SidebarProvider({
   return (
     <SidebarContext.Provider value={contextValue}>
       <TooltipProvider delayDuration={0}>
-        <div
-          data-slot="sidebar-wrapper"
-          style={
-            {
-              "--sidebar-width": SIDEBAR_WIDTH,
-              "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-              ...style,
-            } as React.CSSProperties
-          }
-          className={cn(
-            "group/sidebar-wrapper border-t-1 border-gray-600 has-data-[variant=inset]:bg-sidebar flex h-full w-full",
-            className
-          )}
-          {...props}
-        >
-          {children}
-        </div>
+       <div
+  data-slot="sidebar-wrapper"
+  style={
+    {
+      "--sidebar-width": SIDEBAR_WIDTH,
+      "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+      ...style,
+    } as React.CSSProperties
+  }
+  className={cn(
+    `
+    group/sidebar-wrapper 
+    border-t-1 border-gray-600 
+    has-data-[variant=inset]:bg-sidebar 
+    flex flex-col lg:flex-row 
+    min-h-screen w-full
+    `,
+    className
+  )}
+  {...props}
+>
+  {children}
+</div>
       </TooltipProvider>
     </SidebarContext.Provider>
   )

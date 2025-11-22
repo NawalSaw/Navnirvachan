@@ -1,19 +1,31 @@
+import { getAdminApprovalRequestModel } from "../models/auditDB/adminApprovalRequest.model.js";
+import { getAuditLogModel } from "../models/auditDB/audit.log.model.js";
+import { getCandidateModel } from "../models/ballotDB/candidate.model.js";
+import { getVoterModel } from "../models/voterDB/voter.model.js";
+import { getElectionModel } from "../models/ballotDB/Election.model.js";
+import { getVoterListModel } from "../models/voterDB/VoterList.model.js";
+import { getBallotModel } from "./../models/ballotDB/ballot.model.js";
+import { getConstituencyModel } from "./../models/ballotDB/constituency.model.js";
+import { getTokenMapModel } from "./../models/ballotDB/token.model.js";
+import { getBulletinModel } from "./../models/ballotDB/bulletin.model.js";
+
+const Ballot = getBallotModel();
+const Constituency = getConstituencyModel();
+const TokenMap = getTokenMapModel();
+const Bulletin = getBulletinModel();
+const Election = getElectionModel();
+const VoterList = getVoterListModel();
+const Candidate = getCandidateModel();
+const Voter = getVoterModel();
+const AuditLog = getAuditLogModel();
+const AdminApprovalRequest = getAdminApprovalRequestModel();
+
 import { encryptVote, generateAnonId } from "../crypto/vote_encryption.js";
-import { AdminApprovalRequest } from "../models/auditDB/adminApprovalRequest.model.js";
-import { AuditLog } from "../models/auditDB/audit.log.model.js";
-import Candidate from "../models/ballotDB/candidate.model.js";
-import Election from "../models/ballotDB/Election.model.js";
-import Voter from "../models/voterDB/voter.model.js";
-import VoterList from "../models/voterDB/VoterList.model.js";
 import { appendAudit } from "../utils/database/EventLogger.js";
 import { ApiError } from "../utils/system/ApiError.js";
 import { ApiResponse } from "../utils/system/ApiResponse.js";
 import { ApiHandler } from "../utils/system/ApiHandler.js";
-import Ballot from "./../models/ballotDB/ballot.model.js";
-import Constituency from "./../models/ballotDB/constituency.model.js";
-import { TokenMap } from "./../models/ballotDB/token.model.js";
 import crypto from "crypto";
-import { Bulletin } from "./../models/ballotDB/bulletin.model.js";
 
 function hashBallot(ballot) {
   const data =
@@ -27,7 +39,7 @@ function hashBallot(ballot) {
 
 export const castVote = ApiHandler(async (req, res) => {
   const { constituency, vote, tokenId } = req.body;
-
+  console.log({ constituency, vote, tokenId });
   if (!constituency || !vote || !tokenId) {
     throw new ApiError(400, "constituency, vote, and tokenId are required");
   }
@@ -83,7 +95,8 @@ export const castVote = ApiHandler(async (req, res) => {
   const ballotHash = hashBallot(ballot);
 
   // Publish on bulletin board
-  await Bulletin.create({
+  const bulletin = await Bulletin.create({
+    electionID: tokenEntry.electionId,
     ballotHash,
     publishedAt: new Date(),
   });
@@ -91,7 +104,7 @@ export const castVote = ApiHandler(async (req, res) => {
   res.json(
     new ApiResponse(
       201,
-      { ballotId: ballot._id, ballotHash },
+      { ballotId: ballot._id, ballotHash, bulletinId: bulletin._id },
       "Vote cast successfully and published on bulletin board"
     )
   );
@@ -177,21 +190,7 @@ export const TotalVoteCount = ApiHandler(async (req, res) => {
 
 export const createElection = ApiHandler(async (req, res) => {
   // approval request
-  const { constituency } = req.body;
-  const approvalRequest = await AdminApprovalRequest.findOne({
-    constituency,
-    request: "createElection",
-    status: "approved",
-    requestedBy: req.user._id,
-  });
-  if (!approvalRequest) {
-    throw new ApiError(
-      400,
-      "No pending approval request for this constituency"
-    );
-  }
-
-  const { code, name, description, startDate, endDate, constituencies } =
+  const { code, name, description, startDate, endDate, constituenciesNames } =
     req.body;
 
   if (
@@ -200,7 +199,7 @@ export const createElection = ApiHandler(async (req, res) => {
     !description ||
     !startDate ||
     !endDate ||
-    !constituencies
+    !constituenciesNames
   ) {
     throw new ApiError(400, "All fields are required");
   }
@@ -209,9 +208,19 @@ export const createElection = ApiHandler(async (req, res) => {
     throw new ApiError(400, "Start date must be before end date");
   }
 
-  const existingElection = await Election.findOne({
-    $or: [{ code }, { $in: constituencies }],
+  const constituencies = await Constituency.find({
+    name: { $in: constituenciesNames },
   });
+
+  if (constituencies.length !== constituenciesNames.length) {
+    throw new ApiError(400, "One or more constituencies not found");
+  }
+
+  const existingElection = await Election.find({
+    constituencies: { $in: constituencies.map((c) => c._id) },
+    status: "ongoing",
+  });
+
   if (existingElection) {
     throw new ApiError(400, "Election already exists");
   }
@@ -221,7 +230,7 @@ export const createElection = ApiHandler(async (req, res) => {
     description,
     startDate,
     endDate,
-    constituencies,
+    constituencies: constituencies.map((c) => c._id),
     status:
       startDate > new Date()
         ? "upcoming"
@@ -231,7 +240,7 @@ export const createElection = ApiHandler(async (req, res) => {
   });
   await election.save();
 
-  payload = {
+  const payload = {
     code,
     name,
     description,
@@ -240,7 +249,7 @@ export const createElection = ApiHandler(async (req, res) => {
     constituencies,
     status: election.status,
   };
-  meta = {
+  const meta = {
     ip: req.ip,
     userAgent: req.headers["user-agent"],
     location: req.headers["x-forwarded-for"],
@@ -299,14 +308,17 @@ export const deleteElection = ApiHandler(async (req, res) => {
 export const getElectionByConstituency = ApiHandler(async (req, res) => {
   const { constituency } = req.params;
 
-  const Constituency = await Constituency.findOne({ name: constituency });
-  if (!Constituency) {
+  const constituencyInDatabase = await Constituency.findOne({
+    name: constituency,
+  });
+  if (!constituencyInDatabase) {
     throw new ApiError(404, "Constituency not found");
   }
 
   const election = await Election.findOne({
-    $in: { constituencies: Constituency._id },
-  });
+    constituencies: { $in: [constituencyInDatabase._id] },
+    status: "ongoing",
+  }).populate("constituencies");
 
   if (!election) {
     throw new ApiError(404, "Election not found");
@@ -319,7 +331,6 @@ export const getElectionByConstituency = ApiHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "Election is not ongoing or has ended");
   }
-
   res.json(new ApiResponse(200, election, "Election found successfully"));
 });
 
@@ -331,10 +342,11 @@ export const getElectionProgress = ApiHandler(async (req, res) => {
   }
 
   const voters = await Voter.find({ electionID });
-  const votesCount = voters.length;
-  const allVotersInVoterList = (await VoterList.find({ election: electionID }))
-    .voters.length;
-  const percentage = (votesCount / allVotersInVoterList) * 100;
+  const votesCount = voters?.length || 0;
+  const allVotersInVoterList = await VoterList.find({ election: electionID });
+  const total = allVotersInVoterList?.voters?.length || 0;
+  const percentage = (votesCount / total) * 100 || 0;
+
   res.json(
     new ApiResponse(
       200,
@@ -354,26 +366,7 @@ export const getAllEvents = ApiHandler(async (req, res) => {
   res.json(new ApiResponse(200, events, "Events found successfully"));
 });
 
-export const getElectionByConstituencyAdmin = ApiHandler(async (req, res) => {
-  const { constituency } = req.params;
-
-  const Constituency = await Constituency.findOne({ name: constituency });
-  if (!Constituency) {
-    throw new ApiError(404, "Constituency not found");
-  }
-
-  const election = await Election.findOne({
-    $in: { constituencies: Constituency._id },
-  });
-
-  if (!election) {
-    throw new ApiError(404, "Election not found");
-  }
-
-  res.json(new ApiResponse(200, election, "Election found successfully"));
-});
-
-export const issueToken = async (req, res) => {
+export const issueToken = ApiHandler(async (req, res) => {
   const { voterId, electionId } = req.body;
 
   if (!voterId || !electionId) {
@@ -386,12 +379,15 @@ export const issueToken = async (req, res) => {
     throw new ApiError(404, "Voter not found");
   }
 
-  const election = await Election.findOne({ electionId });
+  const election = await Election.findById(electionId);
   if (!election) {
     throw new ApiError(404, "Election not found");
   }
 
-  if (!election.constituencies.includes(voter.constituency.toString())) {
+  const voterConstituency = await Constituency.findOne({
+    name: voter.constituency,
+  });
+  if (!election.constituencies.includes(voterConstituency._id)) {
     throw new ApiError(403, "Voter does not belong to this constituency");
   }
 
@@ -427,16 +423,34 @@ export const issueToken = async (req, res) => {
   });
 
   return res.json(
-    new ApiResponse(
-      201,
-      { token: tokenId, expiresAt },
-      "Token issued successfully"
-    )
+    new ApiResponse(201, { tokenId, expiresAt }, "Token issued successfully")
   );
-};
+});
+
+export const getTokenId = ApiHandler(async (req, res) => {
+  const { voterId, electionID } = req.params;
+  if (!voterId || !electionID) {
+    throw new ApiError(400, "voterId and electionId are required");
+  }
+  const voterAnonId = generateAnonId(voterId);
+
+  const token = await TokenMap.findOne({
+    electionId: electionID,
+    voterAnonId,
+    used: false,
+  });
+  if (!token) {
+    throw new ApiError(404, "Token not found");
+  }
+  res.json(new ApiResponse(200, token.tokenId, "Token found successfully"));
+});
 
 export const getAllBulletins = ApiHandler(async (req, res) => {
-  const bulletin = await Bulletin.find({});
+  const { electionID } = req.params;
+  if (!electionID) {
+    throw new ApiError(400, "Election ID is required");
+  }
+  const bulletin = await Bulletin.find({ electionID });
   if (!bulletin) {
     throw new ApiError(404, "Ballots not found");
   }

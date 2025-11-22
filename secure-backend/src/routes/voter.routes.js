@@ -1,15 +1,20 @@
 import express from "express";
 import {
   addAdmin,
+  addAdminApprovalRequest,
   addVotersInVoterlist,
+  approveAdminApprovalRequest,
   deleteAdminById,
+  getAdminApprovalRequests,
   getAllAdmins,
   getByIdAdmin,
   GetCandidateWorks,
   getCurrentVoter,
   getOTP,
   getVotersByElection,
+  logout,
   registerVoter,
+  rejectAdminApprovalRequest,
   SendUserOTP,
   verifyAdmin,
 } from "../controllers/Voter.controller.js";
@@ -27,6 +32,11 @@ router
   .get(JWTCheck, isVerifiedAdmin, checkElectionActive, getVotersByElection);
 router.route("/admin/:id").get(JWTCheck, isVerifiedAdmin, getByIdAdmin); //
 router.route("/get-all-admins/:constituency").get(getAllAdmins);
+router.route("/approval-request/").get(JWTCheck, isVerifiedAdmin, getAdminApprovalRequests);
+
+router.route("/approval-request").post(JWTCheck, isVerifiedAdmin, addAdminApprovalRequest);
+router.route("/approval-request/:id/approve").post(JWTCheck, isVerifiedAdmin, approveAdminApprovalRequest);
+router.route("/approval-request/:id/reject").post(JWTCheck, isVerifiedAdmin, rejectAdminApprovalRequest);
 
 router.route("/register").post(upload.single("image"), registerVoter); //
 router.route("/get-user-otp").post(SendUserOTP);
@@ -58,6 +68,7 @@ router
     AdminApprovalCheck("addVoters"),
     addVotersInVoterlist
   );
-router.route("/candidate/works").post(GetCandidateWorks);
+router.route("/candidate/works").get(GetCandidateWorks);
+router.route("/log-out").post(JWTCheck, isVerifiedAdmin, logout);
 
 export default router;

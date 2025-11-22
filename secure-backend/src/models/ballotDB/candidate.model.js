@@ -11,5 +11,10 @@ const candidateSchema = new mongoose.Schema({
   updatedAt: Date
 });
 
-const Candidate = ballotsDB.model("Candidate", candidateSchema);
-export default Candidate;
+let Candidate;
+export function getCandidateModel() {
+  if (!Candidate) {
+    Candidate = ballotsDB.model("Candidate", candidateSchema);
+  }
+  return Candidate;
+}
